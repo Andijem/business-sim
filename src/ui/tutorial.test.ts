@@ -21,7 +21,7 @@ describe('подсказки новичку', () => {
       smart(st);
       finishDay(st);
     }
-    expect(seen.has('tut.open')).toBe(true);
+    expect(seen.has('tut.best')).toBe(true);
     expect(seen.has('tut.card')).toBe(true);
   });
   it('пассивный игрок видит подсказки, а не пустоту', () => {

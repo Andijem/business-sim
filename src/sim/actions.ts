@@ -74,7 +74,8 @@ export function hire(st: GameState, id: number): Result {
 
 export function fire(st: GameState, id: number): Result {
   const p = findPoint(st, id);
-  if (!p || p.owner !== 0 || p.staff <= 1) return fail('point');
+  if (!p || p.owner !== 0) return fail('point');
+  if (p.staff <= 1) return fail('lastStaff');
   p.staff -= 1;
   return OK;
 }

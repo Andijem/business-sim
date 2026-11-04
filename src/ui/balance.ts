@@ -7,6 +7,7 @@ import {
 import type { GameEvent, GameState, NicheId, Point, Raw, Result, Seg } from '../sim';
 import { makeSmart } from '../sim/strategies';
 import { nextHint } from './tutorial';
+import { fxHtml, pointAction, tryAction } from './advice';
 import './balance.css';
 
 const money = (x: number) => Math.round(x).toLocaleString('ru-RU');
@@ -18,7 +19,8 @@ const TABS: Tab[] = ['points', 'money', 'manage'];
 
 /** На какой вкладке живёт кнопка, которую подсвечивает подсказка. */
 const TAB_OF: Record<string, Tab> = {
-  hire: 'points', hall: 'points', nicheUp: 'points',
+  hire: 'points', fire: 'points', hall: 'points', nicheUp: 'points', priceUp: 'points', priceDown: 'points',
+  raw: 'points', format: 'points', manager: 'points',
   dept: 'manage', open: 'manage', buyout: 'manage', auto7: 'manage', new: 'manage',
 };
 
@@ -96,10 +98,14 @@ export function mountBalance(
     const N = NICHES[p.niche];
     const L = p.last;
     const lost = Math.round(L?.lost ?? 0);
-    const nextRaw = (((p.raw + 2) % 3) - 1) as Raw;
     const up = N.upgrades[p.upgrades];
-    const btn = (a: string, label: string, extra = '') => `<button data-a="${a}" data-id="${p.id}" ${extra}>${label}</button>`;
-    const ghost = (a: string, label: string, extra = '') => `<button class="ghost" data-a="${a}" data-id="${p.id}" ${extra}>${label}</button>`;
+    const st = getState();
+    const fx = (a: string, extra: string) => {
+      const x = pointAction(p.id, a, /data-v="([^"]*)"/.exec(extra)?.[1]);
+      return x ? fxHtml(tryAction(st, x)) : '';
+    };
+    const btn = (a: string, label: string, extra = '') => `<button data-a="${a}" data-id="${p.id}" ${extra}>${label}${fx(a, extra)}</button>`;
+    const ghost = (a: string, label: string, extra = '') => `<button class="ghost" data-a="${a}" data-id="${p.id}" ${extra}>${label}${fx(a, extra)}</button>`;
     const tags = [
       tk(`segName.${p.niche}.${p.seg}`),
       tk(`traffic.${p.traffic}`),
@@ -130,7 +136,7 @@ export function mountBalance(
         ${p.hall < 3 ? btn('hall', t('ui.hall', { level: p.hall + 2, cost: money(hallPrice(p)) })) : ''}
         ${up && p.upgrades < p.hall ? btn('nicheUp', t('ui.nicheUp', { name: tk(`upgrade.${up.id}`), cost: money(nicheUpgradePrice(p)) })) : ''}</div>
       <div class="grp"><small>${t('ui.grp.price')} · ${t('ui.priceNow', { price: p.priceIdx.toFixed(2), raw: tk(`raw.${p.raw}`) })}</small>
-        ${ghost('priceDown', t('ui.priceDown'))}${ghost('priceUp', t('ui.priceUp'))}${ghost('raw', t('ui.raw', { raw: tk(`raw.${nextRaw}`) }), `data-v="${nextRaw}"`)}</div>
+        ${ghost('priceDown', t('ui.priceDown'))}${ghost('priceUp', t('ui.priceUp'))}${([-1, 0, 1] as Raw[]).filter((r) => r !== p.raw).map((r) => ghost('raw', t('ui.raw', { raw: tk(`raw.${r}`) }), `data-v="${r}"`)).join('')}</div>
       <div class="grp"><small>${t('ui.grp.format')}</small>${SEG_LIST.filter((s) => s !== p.seg)
         .map((s) => ghost('format', t('ui.format', { seg: tk(`seg.${s}`), cost: money(openPrice(p.niche, s) * ECO.formatChange.costShare) }), `data-v="${s}"`))
         .join('')}</div>
@@ -175,7 +181,7 @@ export function mountBalance(
   }
 
   function pointsTab(st: GameState): string {
-    return st.companies[0].points.map(pointCard).join('');
+    return `<div class="muted legend">${t('ui.fx.legend')}</div>${st.companies[0].points.map(pointCard).join('')}`;
   }
 
   function moneyTab(st: GameState): string {
@@ -276,7 +282,8 @@ export function mountBalance(
       for (const n of Object.keys(V.lots) as NicheId[]) {
         if (!freeLot(st, V.id, n)) continue;
         open.push(`<div class="row"><b>${ICON[n]} ${tk(`niche.${n}`)}</b> · ${tk(`village.${V.id}`)}<div class="btns">${SEG_LIST.map(
-          (s) => `<button data-a="open" data-v="${V.id}|${n}|${s}">${tk(`segName.${n}.${s}`)} · ${money(openPrice(n, s))} Б</button>`,
+          (s) => `<button data-a="open" data-v="${V.id}|${n}|${s}">${tk(`segName.${n}.${s}`)} · ${money(openPrice(n, s))} Б${
+            fxHtml(tryAction(st, { a: 'open', village: V.id, niche: n, seg: s }))}</button>`,
         ).join('')}<button class="ghost" data-a="openLoan" data-v="${V.id}|${n}|0">${t('ui.openLoan')}</button></div></div>`);
       }
     }
@@ -285,13 +292,13 @@ export function mountBalance(
       const can = l < deptCap(st);
       return `<div class="row"><b>${tk(`dept.${d}`)}</b> · ${t('ui.level', { level: l })}
         <small class="muted">${tk(`ui.dept.${d}`)}</small>
-        <div class="btns">${can ? `<button data-a="dept" data-v="${d}">${t('ui.deptBuy', { level: l + 1, cost: money(ECO.deptCost[l]) })}</button>` : `<span class="muted">${t('ui.deptMax')}</span>`}</div></div>`;
+        <div class="btns">${can ? `<button data-a="dept" data-v="${d}">${t('ui.deptBuy', { level: l + 1, cost: money(ECO.deptCost[l]) })}${fxHtml(tryAction(st, { a: 'dept', dept: d }))}${d === 'acc' ? `<small class="fx">${t('ui.fx.accNote')}</small>` : ''}</button>` : `<span class="muted">${t('ui.deptMax')}</span>`}</div></div>`;
     }).join('');
     const rival = st.companies[1].points.map((p) => `<div class="row">${ICON[p.niche]} ${t('ui.rivalLine', {
         niche: tk(`niche.${p.niche}`), village: tk(`village.${p.village}`), traffic: tk(`traffic.${p.traffic}`),
         rep: p.rep.toFixed(1), price: p.priceIdx.toFixed(2),
       })}${p.forSale ? ` <span class="tag warn">${t('ui.forSale')}</span>` : ''}
-      ${st.unlocked.includes(p.village) ? `<div class="btns"><button data-a="buyout" data-id="${p.id}">${t('ui.buyout', { cost: money(buyoutPrice(p)) })}</button></div>` : ''}</div>`).join('');
+      ${st.unlocked.includes(p.village) ? `<div class="btns"><button data-a="buyout" data-id="${p.id}">${t('ui.buyout', { cost: money(buyoutPrice(p)) })}${fxHtml(tryAction(st, { a: 'buyout', id: p.id }))}</button></div>` : ''}</div>`).join('');
     const events = st.events.slice(-14).reverse().map((e) => `<div class="ev"><span>${e.day + 1}</span> ${eventText(e)}</div>`).join('');
     return `${rivalBlock(st)}
       <h3>${t('ui.villages')}</h3><div class="panel">${villages}</div>
@@ -349,7 +356,7 @@ export function mountBalance(
     const bar = el.querySelector<HTMLElement>('.bar');
     if (bar) el.style.setProperty('--bar-h', `${bar.offsetHeight}px`);
     if (hints && hint.target) {
-      const sel = hint.target === 'card' ? '.card button' : `button[data-a="${hint.target}"]`;
+      const sel = hint.sel ?? (hint.target === 'card' ? '.card button' : `button[data-a="${hint.target}"]`);
       el.querySelector(sel)?.classList.add('pulse');
     }
   }

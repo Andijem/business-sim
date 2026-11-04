@@ -1,5 +1,5 @@
 import { buyDept, buyout, buyoutPrice, freeLot, hire, hallPrice, openPoint, openPrice, player, rival, upgradeHall } from './actions';
-import { DEPTS, ECO, NICHES, VILLAGES, VILLAGE_MIX, SEGS, seg, trafficRent, village } from './data';
+import { DEPTS, ECO, NICHES, VILLAGES, VILLAGE_MIX, SEGS, nichesOpen, seg, trafficRent, village } from './data';
 import { newGame, type PointInit } from './state';
 import { endDay, finishDay } from './tick';
 import type { GameOptions, GameState, NicheId, Raw, Seg, VillageId } from './types';
@@ -92,7 +92,7 @@ export function makeSmart(cfg: SmartCfg = {}): Act {
     // Сначала самая новая открытая деревня.
     const order = VILLAGES.filter((v) => st.unlocked.includes(v.id)).reverse();
     for (const V of order) {
-      for (const niche of Object.keys(village(V.id).lots) as NicheId[]) {
+      for (const niche of nichesOpen(st.unlocked, V)) {
         const s = chooseSeg(st, V.id, niche, sg);
         const cost = openPrice(niche, s, V.id);
         const mine = me.points.filter((p) => p.village === V.id && p.niche === niche).length;

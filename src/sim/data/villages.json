@@ -3,13 +3,15 @@
   "trafficRent": {"1.25": 1.3, "1": 1.0, "0.8": 0.7},
   "villages": [
     {"id": "kopeechkino", "rent": 1.0, "market": {"coffee": 420, "store": 750}, "lots": {"store": 3, "coffee": 4}, "traffic": {"coffee": [1.25, 1.25, 1.0, 0.8], "store": [1.25, 1.0, 0.8]}, "unlocks": "barysh"},
-    {"id": "barysh", "rent": 1.15, "market": {"coffee": 300, "store": 570, "wash": 150}, "lots": {"wash": 4, "store": 3, "coffee": 3}, "traffic": {"wash": [1.25, 1.0, 1.0, 0.8], "store": [1.25, 1.25, 1.0], "coffee": [1.25, 1.0, 0.8]}, "unlocks": "grosh"},
+    {"id": "barysh", "rent": 1.15, "market": {"coffee": 300, "store": 570, "wash": 150, "tyre": 30, "shawarma": 270}, "lots": {"wash": 4, "store": 3, "coffee": 3, "tyre": 3, "shawarma": 3}, "traffic": {"wash": [1.25, 1.0, 1.0, 0.8], "store": [1.25, 1.25, 1.0], "coffee": [1.25, 1.0, 0.8], "tyre": [1.0, 1.0, 0.8], "shawarma": [1.0, 1.0, 0.8]}, "unlocks": "grosh", "later": {"after": "kreditovka", "niches": ["tyre", "shawarma"]}},
     {"id": "grosh", "rent": 0.9, "market": {"farm": 440, "bakery": 400, "store": 380}, "lots": {"farm": 5, "bakery": 3, "store": 3}, "traffic": {"farm": [1.25, 1.25, 1.0, 1.0, 0.8], "bakery": [1.25, 1.0, 0.8], "store": [1.25, 1.0, 0.8]}, "unlocks": "navarinka", "lateRival": true},
     {"id": "navarinka", "rent": 1.2, "market": {"guesthouse": 65, "resortCafe": 280, "fish": 200, "rental": 40}, "lots": {"guesthouse": 4, "resortCafe": 3, "fish": 3, "rental": 3}, "traffic": {"guesthouse": [1.25, 1.25, 1.0, 0.8], "resortCafe": [1.25, 1.0, 0.8], "fish": [1.25, 1.0, 0.8], "rental": [1.25, 1.0, 0.8]}, "summerMix": [0.35, 0.45, 0.2], "unlocks": "novostroyki", "lateRival": true},
     {"id": "novostroyki", "city": true, "rent": 1.3, "market": {"store": 1800, "coffee": 660, "shawarma": 450, "wash": 180, "laundry": 189, "nannies": 31, "tyre": 27, "beauty": 54, "couriers": 231}, "lots": {"store": 6, "coffee": 4, "shawarma": 3, "wash": 3, "laundry": 3, "nannies": 3, "tyre": 2, "beauty": 2, "couriers": 2}, "traffic": {"store": [1.25, 1.25, 1.0, 1.0, 0.8, 0.8], "coffee": [1.25, 1.0, 1.0, 0.8], "shawarma": [1.25, 1.0, 0.8], "wash": [1.25, 1.0, 0.8], "laundry": [1.25, 1.0, 0.8], "nannies": [1.25, 1.0, 0.8], "tyre": [1.25, 1.0], "beauty": [1.25, 1.0], "couriers": [1.25, 1.0]}, "mix": [0.5, 0.4, 0.1], "unlocks": "zarechye", "lateRival": true, "rival": {"share": 0.6, "skill": 60, "rep": 3.4, "staff": 2, "hall": 1}, "buyout": {"openShare": 1.0, "profitDays": 20}, "costMult": 4},
     {"id": "zarechye", "city": true, "rent": 1.1, "market": {"store": 1800, "farm": 540, "bakery": 840, "shawarma": 450, "coffee": 495, "nannies": 31, "tyre": 40, "laundry": 126}, "lots": {"store": 6, "farm": 4, "bakery": 4, "shawarma": 3, "coffee": 3, "nannies": 3, "tyre": 3, "laundry": 2}, "traffic": {"store": [1.25, 1.25, 1.0, 1.0, 0.8, 0.8], "farm": [1.25, 1.0, 1.0, 0.8], "bakery": [1.25, 1.0, 1.0, 0.8], "shawarma": [1.25, 1.0, 0.8], "coffee": [1.25, 1.0, 0.8], "nannies": [1.25, 1.0, 0.8], "tyre": [1.25, 1.0, 0.8], "laundry": [1.25, 1.0]}, "mix": [0.55, 0.38, 0.07], "unlocks": "port", "lateRival": true, "rival": {"share": 0.6, "skill": 60, "rep": 3.4, "staff": 2, "hall": 1}, "buyout": {"openShare": 1.0, "profitDays": 20}, "costMult": 6},
     {"id": "port", "city": true, "rent": 1.0, "market": {"carService": 95, "tyre": 54, "wash": 240, "canteen": 840, "couriers": 462, "fish": 315, "store": 600}, "lots": {"carService": 5, "tyre": 4, "wash": 4, "canteen": 4, "couriers": 4, "fish": 3, "store": 2}, "traffic": {"carService": [1.25, 1.0, 1.0, 1.0, 0.8], "tyre": [1.25, 1.0, 1.0, 0.8], "wash": [1.25, 1.0, 1.0, 0.8], "canteen": [1.25, 1.0, 1.0, 0.8], "couriers": [1.25, 1.0, 1.0, 0.8], "fish": [1.25, 1.0, 0.8], "store": [1.25, 1.0]}, "mix": [0.55, 0.4, 0.05], "unlocks": "studgorodok", "lateRival": true, "rival": {"share": 0.6, "skill": 60, "rep": 3.4, "staff": 2, "hall": 1}, "buyout": {"openShare": 1.0, "profitDays": 20}, "costMult": 8},
-    {"id": "studgorodok", "city": true, "rent": 1.2, "market": {"shawarma": 750, "coffee": 825, "laundry": 252, "techRepair": 56, "couriers": 347, "canteen": 630, "beauty": 81}, "lots": {"shawarma": 5, "coffee": 5, "laundry": 4, "techRepair": 3, "couriers": 3, "canteen": 3, "beauty": 3}, "traffic": {"shawarma": [1.25, 1.0, 1.0, 1.0, 0.8], "coffee": [1.25, 1.0, 1.0, 1.0, 0.8], "laundry": [1.25, 1.0, 1.0, 0.8], "techRepair": [1.25, 1.0, 0.8], "couriers": [1.25, 1.0, 0.8], "canteen": [1.25, 1.0, 0.8], "beauty": [1.25, 1.0, 0.8]}, "mix": [0.55, 0.4, 0.05], "unlocks": null, "lateRival": true, "rival": {"share": 0.6, "skill": 60, "rep": 3.4, "staff": 2, "hall": 1}, "seasonFlow": [1, 0.35, 1, 1], "buyout": {"openShare": 1.0, "profitDays": 20}, "costMult": 11}
+    {"id": "studgorodok", "city": true, "rent": 1.2, "market": {"shawarma": 750, "coffee": 825, "laundry": 252, "techRepair": 56, "couriers": 347, "canteen": 630, "beauty": 81}, "lots": {"shawarma": 5, "coffee": 5, "laundry": 4, "techRepair": 3, "couriers": 3, "canteen": 3, "beauty": 3}, "traffic": {"shawarma": [1.25, 1.0, 1.0, 1.0, 0.8], "coffee": [1.25, 1.0, 1.0, 1.0, 0.8], "laundry": [1.25, 1.0, 1.0, 0.8], "techRepair": [1.25, 1.0, 0.8], "couriers": [1.25, 1.0, 0.8], "canteen": [1.25, 1.0, 0.8], "beauty": [1.25, 1.0, 0.8]}, "mix": [0.55, 0.4, 0.05], "unlocks": "kreditovka", "lateRival": true, "rival": {"share": 0.6, "skill": 60, "rep": 3.4, "staff": 2, "hall": 1}, "seasonFlow": [1, 0.35, 1, 1], "buyout": {"openShare": 1.0, "profitDays": 20}, "costMult": 11},
+    {"id": "kreditovka", "rent": 1.0, "market": {"cleaning": 56, "laundry": 360, "canteen": 1680, "coffee": 1200}, "lots": {"cleaning": 3, "laundry": 3, "canteen": 3, "coffee": 3}, "traffic": {"cleaning": [1.25, 1.0, 0.8], "laundry": [1.25, 1.0, 0.8], "canteen": [1.25, 1.0, 0.8], "coffee": [1.25, 1.0, 0.8]}, "unlocks": "dolzhkovo", "lateRival": true, "costMult": 20, "loanRateMult": 0.5},
+    {"id": "dolzhkovo", "rent": 0.9, "market": {"coffee": 1100, "store": 2000, "shawarma": 1100, "bakery": 1400, "beauty": 180, "laundry": 300}, "lots": {"coffee": 2, "store": 2, "shawarma": 2, "bakery": 2, "beauty": 2, "laundry": 2}, "traffic": {"coffee": [1.0, 1.0], "store": [1.0, 1.0], "shawarma": [1.0, 1.0], "bakery": [1.0, 1.0], "beauty": [1.0, 1.0], "laundry": [1.0, 1.0]}, "unlocks": null, "lateRival": true, "costMult": 25}
   ],
   "start": {
     "playerCash": 40000,
@@ -31,7 +33,18 @@
       {"niche": "guesthouse", "village": "navarinka", "staff": 2, "rep": 3.2},
       {"niche": "guesthouse", "village": "navarinka", "rep": 3.0},
       {"niche": "resortCafe", "village": "navarinka", "staff": 2},
-      {"niche": "fish", "village": "navarinka", "rep": 3.1}
+      {"niche": "fish", "village": "navarinka", "rep": 3.1},
+      {"niche": "tyre", "village": "barysh", "after": "kreditovka", "staff": 2},
+      {"niche": "cleaning", "village": "kreditovka", "staff": 2, "rep": 3.2},
+      {"niche": "laundry", "village": "kreditovka", "staff": 2, "rep": 3.2},
+      {"niche": "canteen", "village": "kreditovka", "staff": 2, "rep": 3.2},
+      {"niche": "coffee", "village": "kreditovka", "staff": 2, "rep": 3.2},
+      {"niche": "coffee", "village": "dolzhkovo", "staff": 2, "rep": 3.3},
+      {"niche": "store", "village": "dolzhkovo", "staff": 2, "rep": 3.3},
+      {"niche": "shawarma", "village": "dolzhkovo", "staff": 2, "rep": 3.3},
+      {"niche": "bakery", "village": "dolzhkovo", "staff": 2, "rep": 3.3},
+      {"niche": "beauty", "village": "dolzhkovo", "staff": 2, "rep": 3.3},
+      {"niche": "laundry", "village": "dolzhkovo", "staff": 2, "rep": 3.3}
     ]
   }
 }

@@ -1,4 +1,4 @@
-import { VILLAGES } from './data';
+import { VILLAGES, nichesOpen } from './data';
 import type { GameEvent, GameState, NicheId, VillageId } from './types';
 
 export interface NicheShare {
@@ -31,7 +31,7 @@ export function rivalry(st: GameState): Rivalry {
   const niches: NicheShare[] = [];
   let revMine = 0, revTheirs = 0, wkMine = 0, wkTheirs = 0;
   for (const V of open) {
-    for (const niche of Object.keys(V.lots) as NicheId[]) {
+    for (const niche of nichesOpen(st.unlocked, V)) {
       const mp = me.points.filter((p) => p.village === V.id && p.niche === niche);
       const tp = rv.points.filter((p) => p.village === V.id && p.niche === niche && !p.forSale);
       const mine = mp.reduce((a, p) => a + (p.last?.served ?? 0), 0);

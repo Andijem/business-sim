@@ -137,3 +137,38 @@ describe('v0.3: кольцо 1 Капитальска', () => {
     expect(play(true).last).toBeLessThanOrEqual(390);
   }, 120_000);
 });
+
+describe('v0.4: Кредитовка и Должково', () => {
+  const DAYS = 470;
+  const SEEDS4 = 12;
+  const play = (cautious: boolean) => {
+    const k: number[] = [], d: number[] = [];
+    for (let seed = 0; seed < SEEDS4; seed++) {
+      const s = STRATEGIES.smart;
+      const st = newGame(seed, { cards: cautious }, s.first ?? {});
+      for (let day = 0; day < DAYS && !st.bankrupt; day++) {
+        endDay(st);
+        for (const pc of [...st.pending]) {
+          const c = cardDef(pc.card);
+          resolveCard(st, pc.uid, (c.options.find((o) => o.cautious) ?? c.options[0]).id);
+        }
+        s.act(st);
+        finishDay(st);
+      }
+      expect(st.bankrupt).toBe(false);
+      k.push(st.captured.kreditovka ?? 999);
+      d.push(st.captured.dolzhkovo ?? 999);
+    }
+    return { k: median(k), d: median(d) };
+  };
+  it('smart без карточек: Кредитовка около 384-го дня, Должково около 417-го', () => {
+    const r = play(false);
+    expect(r.k).toBeGreaterThanOrEqual(365);
+    expect(r.k).toBeLessThanOrEqual(405);
+    expect(r.d).toBeGreaterThanOrEqual(395);
+    expect(r.d).toBeLessThanOrEqual(440);
+  }, 180_000);
+  it('smart с осторожными ответами: Должково ≤ 455', () => {
+    expect(play(true).d).toBeLessThanOrEqual(455);
+  }, 180_000);
+});

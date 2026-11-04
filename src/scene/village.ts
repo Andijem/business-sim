@@ -1,5 +1,6 @@
+import * as THREE from 'three';
 import { VILLAGES } from '../sim';
-import { villageLots, villageX, TEMPLATE_SLOTS, PLOT, VILLAGE_GAP } from './layout';
+import { villageLots, villageX, templateOf, riverX, PLOT, DISTRICT_GAP, RIVER_GAP } from './layout';
 import { VoxelStore, vi, pick, hash, VS } from './voxels';
 
 const P = {
@@ -10,19 +11,110 @@ const P = {
   wheat: [0xe8c870, 0xdcb85c], soil: [0x8a6a4a, 0x7d5f42],
 };
 
-/** Половина длины деревни вдоль дороги. */
+/** Половина длины деревни вдоль дороги; у района города — шире. */
 const HALF = 32;
+const halfOf = (city?: boolean) => (city ? DISTRICT_GAP / 2 : HALF);
 
 /**
  * Неизменная часть мира: дороги, тротуары, дома жителей, деревья, поля.
  * Точки бизнеса строятся отдельно (scene/lots.ts) и перестраиваются по ходу игры.
  */
 export function buildVillages(s: VoxelStore) {
-  const first = -HALF, last = (VILLAGES.length - 1) * VILLAGE_GAP + HALF;
-  // главная дорога через все деревни
-  s.fill(first, -0.25, 1, last, 0, 5, (i, j, k) => pick(P.road, i, j, k));
-  for (let x = first + 1; x < last; x += 2) s.fill(x, -0.25, 2.85, x + 1, 0, 3.15, P.paint);
-  for (const V of VILLAGES) village(s, V.id);
+  const lastV = VILLAGES[VILLAGES.length - 1];
+  road(s, -HALF, villageX(lastV.id) + halfOf(lastV.city));
+  const rx = riverX();
+  if (rx != null) river(s, rx);
+  for (const V of VILLAGES) (V.city ? district : village)(s, V.id);
+}
+
+function road(s: VoxelStore, a: number, b: number) {
+  s.fill(a, -0.25, 1, b, 0, 5, (i, j, k) => pick(P.road, i, j, k));
+  for (let x = a + 1; x < b; x += 2) s.fill(x, -0.25, 2.85, Math.min(b, x + 1), 0, 3.15, P.paint);
+}
+
+/**
+ * Весь неизменный мир кусками: у каждой деревни и района свой набор мешей.
+ * Так three.js не рисует (и не считает в тенях) места, которые не попали в кадр.
+ */
+export function buildWorld(): THREE.Group {
+  const world = new THREE.Group();
+  const rx = riverX();
+  VILLAGES.forEach((V, i) => {
+    const s = new VoxelStore();
+    const x = villageX(V.id);
+    const prev = VILLAGES[i - 1], next = VILLAGES[i + 1];
+    // дорога от середины промежутка до середины следующего, но не по воде
+    let a = i === 0 ? x - HALF : (villageX(prev.id) + x) / 2;
+    let b = next ? (x + villageX(next.id)) / 2 : x + halfOf(V.city);
+    if (rx != null && !V.city && next?.city) b = rx - RIVER_GAP / 2 + 3;
+    if (rx != null && V.city && !prev?.city) a = rx + RIVER_GAP / 2 - 3;
+    road(s, a, b);
+    (V.city ? district : village)(s, V.id);
+    world.add(s.build());
+  });
+  if (rx != null) {
+    const s = new VoxelStore();
+    river(s, rx);
+    world.add(s.build());
+    const w = RIVER_GAP / 2 - 4;
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(w * 2, 120), new THREE.MeshLambertMaterial({ color: 0x5a9ab8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(rx, -0.01, 0);
+    water.receiveShadow = true;
+    world.add(water);
+  }
+  return world;
+}
+
+/** Река между деревнями и городом, через неё мост с перилами. */
+function river(s: VoxelStore, cx: number) {
+  const w = RIVER_GAP / 2 - 4;
+  // вода — отдельная плоскость (buildWorld), здесь берега и мост
+  s.fill(cx - w - 0.5, -0.25, -60, cx - w, 0.25, 60, 0xb8a888);
+  s.fill(cx + w, -0.25, -60, cx + w + 0.5, 0.25, 60, 0xb8a888);
+  // мост: настил над водой и перила
+  s.fill(cx - w - 1, 0, 0.5, cx + w + 1, 0.25, 5.5, (i, j, k) => pick(P.road, i, j, k));
+  s.fill(cx - w - 1, -0.75, 0, cx + w + 1, 0, 6, 0x9a9488);
+  for (let x = cx - w - 1; x < cx + w + 1; x += 1) {
+    s.fill(x, 0.25, 0, x + 0.25, 1.25, 0.25, 0x6d7f9a);
+    s.fill(x, 0.25, 5.75, x + 0.25, 1.25, 6, 0x6d7f9a);
+  }
+  s.fill(cx - w - 1, 1.25, 0, cx + w + 1, 1.5, 0.25, 0x6d7f9a);
+  s.fill(cx - w - 1, 1.25, 5.75, cx + w + 1, 1.5, 6, 0x6d7f9a);
+}
+
+/** Район Капитальска: проспект, тротуары, многоэтажки за участками. */
+function district(s: VoxelStore, id: string) {
+  const vx = villageX(id);
+  const H = DISTRICT_GAP / 2;
+  const X = (x: number) => vx + x;
+  const asphalt = (i: number, j: number, k: number) => pick(P.road, i, j, k);
+  const paving = (i: number, _j: number, k: number) => ((i + k) % 4 === 0 ? P.walk2 : P.walk);
+  s.fill(X(-8), -0.25, -40, X(-4), 0, 1, asphalt);
+  for (let q = 0; q < 5; q++) s.fill(X(-3.4 + q * 0.75), -0.25, 1.2, X(-3.0 + q * 0.75), 0, 4.8, P.paint);
+  s.fill(X(-H), 0, 0, X(-8.5), 0.25, 1, paving);
+  s.fill(X(-3.5), 0, 0, X(H), 0.25, 1, paving);
+  s.fill(X(-H), 0, 5, X(H), 0.25, 6, paving);
+  s.fill(X(-8.5), 0, -40, X(-8), 0.25, 0, paving);
+  s.fill(X(-4), 0, -40, X(-3.5), 0.25, 0, paving);
+  const used = new Set(villageLots(id).map((l) => l.slot));
+  templateOf(id).forEach((sl, n) => {
+    if (used.has(n)) return;
+    const x0 = X(sl.x0), z0 = sl.z0;
+    if (n % 3 === 0) garden(s, x0, z0);
+    else panelBlock(s, x0 + 0.5, z0 + 1.5, 6, 4, 3 + (n % 3), n % 2 ? 0xe6d6c0 : 0xd9c7b0);
+  });
+  // многоэтажки за линией участков, с двух сторон проспекта
+  const seed = vx;
+  for (let x = -H + 4; x < H - 10; x += 12) {
+    const f1 = 5 + Math.floor(hash(seed + x, 1, 1) * 5), f2 = 5 + Math.floor(hash(seed + x, 2, 2) * 5);
+    if (x < -20 || x > 4) panelBlock(s, X(x), -20, 9, 4, f1, hash(x, 3, 3) > 0.5 ? 0xd9c7b0 : 0xe6d6c0);
+    panelBlock(s, X(x), 16, 9, 4, f2, hash(x, 4, 4) > 0.5 ? 0xe6d6c0 : 0xcfd8de);
+  }
+  for (let x = -H + 6; x < H; x += 10) lamp(s, X(x), 0.5);
+  for (let x = -H + 11; x < H; x += 10) lamp(s, X(x), 5.4);
+  [[-12, -10], [10, -10], [28, -10], [-38, 14], [20, 14]].forEach(([x, z]) => tree(s, X(x), z, 2.6));
+  car(s, X(-20), 1.5, 0x3b7fbf); car(s, X(14), 3.5, 0xe2604a); car(s, X(34), 1.5, 0xe9e2d6);
 }
 
 function village(s: VoxelStore, id: string) {
@@ -41,7 +133,7 @@ function village(s: VoxelStore, id: string) {
   s.fill(X(-4), 0, -31, X(-3.5), 0.25, 0, paving);
   // участки шаблона, на которых в этой деревне нет лотов, занимают дома жителей и огороды
   const used = new Set(villageLots(id).map((l) => l.slot));
-  TEMPLATE_SLOTS.forEach((sl, n) => {
+  templateOf(id).forEach((sl, n) => {
     if (used.has(n)) return;
     const x0 = X(sl.x0), z0 = sl.z0;
     if (n % 2) garden(s, x0, z0);

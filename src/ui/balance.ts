@@ -1,4 +1,4 @@
-import { t, tk } from '../i18n';
+import { hasKey, t, tk } from '../i18n';
 import {
   DEPTS, ECO, NICHES, VILLAGES, buyDept, buyNicheUpgrade, buyout, buyoutPrice, cardDef, changeFormat, countPoints,
   deptCap, endDay, finishDay, fire, fixedCosts, forecast, freeLot, yesterday, hallPrice, hire, loanLimit, nicheUpgradePrice, openPoint,
@@ -31,6 +31,8 @@ const TAB_OF: Record<string, Tab> = {
 /** Подставляет русские названия вместо идентификаторов в параметрах событий. */
 export function eventText(e: GameEvent): string {
   const p: Record<string, string | number> = { ...(e.params ?? {}) };
+  // в городе соперник — «Всё схвачено», а не Хваткин
+  const key = typeof p.village === 'string' && VILLAGES.find((v) => v.id === p.village)?.city && hasKey(`${e.key}.city`) ? `${e.key}.city` : e.key;
   if (typeof p.niche === 'string') p.niche = tk(`niche.${p.niche}`);
   if (typeof p.village === 'string') p.village = tk(`village.${p.village}`);
   if (typeof p.dept === 'string') p.dept = tk(`dept.${p.dept}`);
@@ -42,7 +44,7 @@ export function eventText(e: GameEvent): string {
     if (typeof p.option === 'string') p.option = tk(`card.${p.card}.${p.option}`);
     p.card = tk(`card.${p.card}.title`);
   }
-  return tk(e.key, p);
+  return tk(key, p);
 }
 
 /** Что показывает панель: весь текстовый режим или одну шторку поверх сцены. */
@@ -174,7 +176,7 @@ export function mountBalance(
       <div class="grp"><small>${t('ui.grp.price')} · ${t('ui.priceNow', { price: p.priceIdx.toFixed(2), raw: tk(`raw.${p.raw}`) })}</small>
         ${ghost('priceDown', t('ui.priceDown'))}${ghost('priceUp', t('ui.priceUp'))}${([-1, 0, 1] as Raw[]).filter((r) => r !== p.raw).map((r) => ghost('raw', t('ui.raw', { raw: tk(`raw.${r}`) }), `data-v="${r}"`)).join('')}</div>
       <div class="grp"><small>${t('ui.grp.format')}</small>${SEG_LIST.filter((s) => s !== p.seg)
-        .map((s) => ghost('format', t('ui.format', { seg: tk(`seg.${s}`), cost: money(openPrice(p.niche, s) * ECO.formatChange.costShare) }), `data-v="${s}"`))
+        .map((s) => ghost('format', t('ui.format', { seg: tk(`seg.${s}`), cost: money(openPrice(p.niche, s, p.village) * ECO.formatChange.costShare) }), `data-v="${s}"`))
         .join('')}</div>
     </div>`;
   }
@@ -281,7 +283,7 @@ export function mountBalance(
       <small class="muted">${t('ui.vs.line', { mine: Math.round(n.mine), theirs: Math.round(n.theirs), pm: n.pointsMine, pt: n.pointsTheirs })}</small></div>`).join('');
     const hist = rivalHistory(st).map((e) => `<div class="ev"><span>${e.day + 1}</span> ${eventText(e)}</div>`).join('')
       || `<div class="muted">${t('ui.vs.quiet')}</div>`;
-    return `<h3>${t('ui.vs.title')}</h3><div class="panel">
+    return `<h3>${st.unlocked.some((id) => VILLAGES.find((v) => v.id === id)?.city) ? t('ui.vs.titleCity') : t('ui.vs.title')}</h3><div class="panel">
         <div class="vstop"><span>${t('ui.vs.share')}</span><b>${pct(r.share)}%</b>${trend}</div>
         ${bar(r.share)}<div class="vslegend"><span>${t('ui.vs.me')}</span><span>${t('ui.vs.him')}</span></div>
         <div class="muted">${tk(`ui.vs.${verdict}`)}</div>
@@ -362,7 +364,7 @@ export function mountBalance(
   /** Кнопки открытия точки на свободном участке. */
   function openRow(st: GameState, v: string, n: NicheId): string {
     return `<div class="row"><b>${ICON[n]} ${tk(`niche.${n}`)}</b> · ${tk(`village.${v}`)}<div class="btns">${SEG_LIST.map(
-      (s) => `<button data-a="open" data-v="${v}|${n}|${s}">${tk(`segName.${n}.${s}`)} · ${money(openPrice(n, s))} Б${
+      (s) => `<button data-a="open" data-v="${v}|${n}|${s}">${tk(`segName.${n}.${s}`)} · ${money(openPrice(n, s, v))} Б${
         fxHtml(tryAction(st, { a: 'open', village: v, niche: n, seg: s }))}</button>`,
     ).join('')}<button class="ghost" data-a="openLoan" data-v="${v}|${n}|0">${t('ui.openLoan')}</button></div></div>`;
   }
@@ -389,7 +391,7 @@ export function mountBalance(
     const won = st.events.filter((e) => e.day === st.day - 1 && e.key === 'ev.captured');
     const opened = st.events.filter((e) => e.day === st.day - 1 && e.key === 'ev.unlocked');
     const win = won.map((e) => `<div class="win">🎉 ${t('ui.sum.captured', { village: tk(`village.${e.params?.village}`) })}
-      ${opened.map((o) => `<div>${t('ui.sum.unlocked', { village: tk(`village.${o.params?.village}`) })}</div>`).join('')}</div>`).join('');
+      ${opened.map((o) => `<div>${tk(VILLAGES.find((v) => v.id === o.params?.village)?.city ? 'ui.sum.unlockedCity' : 'ui.sum.unlocked', { village: tk(`village.${o.params?.village}`) })}</div>`).join('')}</div>`).join('');
     return `${win}<h3>${t('ui.sum.title', { day: st.day })}</h3>
       <div class="panel"><div class="big">${t('ui.sum.guests', { served: Math.round(served), lost: Math.round(lost) })}</div>
       ${bdTable(yesterday(st), false)}</div>
@@ -443,7 +445,7 @@ export function mountBalance(
       case 'rival': {
         const id = sheet.id;
         const p = st.companies[1].points.find((x) => x.id === id);
-        return `${p ? `<h3>${t('ui.rival')}</h3><div class="panel">${rivalRow(st, p)}</div>` : ''}${rivalBlock(st)}`;
+        return `${p ? `<h3>${VILLAGES.find((v) => v.id === p.village)?.city ? t('ui.rivalCity') : t('ui.rival')}</h3><div class="panel">${rivalRow(st, p)}</div>` : ''}${rivalBlock(st)}`;
       }
       case 'depts': return `<h3>${t('ui.depts')}</h3><div class="panel">${deptsHtml(st)}</div>`;
       case 'cards': return cardsHtml(st);

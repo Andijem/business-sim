@@ -63,6 +63,9 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'barysh', coins: 50, done: (st) => 'barysh' in st.captured },
   { id: 'grosh', coins: 60, done: (st) => 'grosh' in st.captured },
   { id: 'navarinka', coins: 80, done: (st) => 'navarinka' in st.captured },
+  { id: 'bridge', coins: 30, done: (st) => st.unlocked.includes('novostroyki') },
+  { id: 'district', coins: 100, done: (st) => 'novostroyki' in st.captured },
+  { id: 'ring1', coins: 200, done: (st) => ['novostroyki', 'zarechye', 'port', 'studgorodok'].every((v) => v in st.captured) },
 ];
 
 /** Новые достижения: отмечает их и начисляет монетки. */

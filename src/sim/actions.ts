@@ -35,7 +35,9 @@ export function freeLot(st: GameState, v: VillageId, niche: NicheId): boolean {
 /** Пока действует спасительный кредит, расширение заморожено. */
 export const frozen = (st: GameState): boolean => st.loans.some((l) => l.kind === 'rescue');
 
-export const openPrice = (niche: NicheId, s: Seg): number => NICHES[niche].openCost * seg(s).open;
+/** Во сколько раз в районе дороже помещение и ремонт (город: costMult района). */
+export const costMult = (v?: VillageId): number => (v ? village(v).costMult ?? 1 : 1);
+export const openPrice = (niche: NicheId, s: Seg, v?: VillageId): number => NICHES[niche].openCost * seg(s).open * costMult(v);
 
 export interface OpenOpts {
   raw?: Raw;
@@ -48,7 +50,7 @@ export function openPoint(st: GameState, v: VillageId, niche: NicheId, s: Seg, o
   if (!st.unlocked.includes(v)) return fail('locked');
   if (!(niche in village(v).lots)) return fail('niche');
   if (!freeLot(st, v, niche)) return fail('noLot');
-  const cost = openPrice(niche, s);
+  const cost = openPrice(niche, s, v);
   const co = player(st);
   if (o.pay === 'loan') {
     const r = takeLoan(st, cost);
@@ -80,7 +82,7 @@ export function fire(st: GameState, id: number): Result {
   return OK;
 }
 
-export const hallPrice = (p: Point): number => NICHES[p.niche].hallCost[p.hall + 1] * seg(p.seg).open;
+export const hallPrice = (p: Point): number => NICHES[p.niche].hallCost[p.hall + 1] * seg(p.seg).open * costMult(p.village);
 
 export function upgradeHall(st: GameState, id: number): Result {
   const p = findPoint(st, id);
@@ -97,7 +99,7 @@ export function upgradeHall(st: GameState, id: number): Result {
 
 /** Прокачки ниши открываются по одной на зале 2, 3 и 4. */
 export const nicheUpgradePrice = (p: Point): number =>
-  NICHES[p.niche].openCost * seg(p.seg).open * ECO.nicheUpgradeCost[p.upgrades];
+  NICHES[p.niche].openCost * seg(p.seg).open * costMult(p.village) * ECO.nicheUpgradeCost[p.upgrades];
 
 export function buyNicheUpgrade(st: GameState, id: number): Result {
   const p = findPoint(st, id);
@@ -132,8 +134,9 @@ export function buyDept(st: GameState, d: DeptId): Result {
 
 /** Цена выкупа точки Хваткина: цена открытия (половина, если на продаже) + 20 дней её прибыли. */
 export function buyoutPrice(p: Point): number {
-  const b = ECO.buyout;
-  const base = NICHES[p.niche].openCost * seg(p.seg).open * (p.forSale ? b.forSaleShare : b.openShare);
+  // В городе «Всё схвачено» продаёт дороже: свои доли открытия и дней прибыли у района.
+  const b = { ...ECO.buyout, ...(village(p.village).buyout ?? {}) };
+  const base = NICHES[p.niche].openCost * seg(p.seg).open * costMult(p.village) * (p.forSale ? b.forSaleShare : b.openShare);
   return roundHalfEven((base + b.profitDays * Math.max(0, p.profitEma ?? 0)) / 1000) * 1000;
 }
 
@@ -200,7 +203,7 @@ export function changeFormat(st: GameState, id: number, s: Seg): Result {
   if (!p || p.owner !== 0) return fail('point');
   if (p.seg === s) return fail('same');
   if (frozen(st)) return fail('frozen');
-  const cost = openPrice(p.niche, s) * ECO.formatChange.costShare;
+  const cost = openPrice(p.niche, s, p.village) * ECO.formatChange.costShare;
   if (player(st).cash < cost) return fail('cash');
   player(st).cash -= cost;
   p.seg = s;

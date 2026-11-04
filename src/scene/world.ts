@@ -62,8 +62,10 @@ export function setupWorld(scene: THREE.Scene): World {
   scene.add(sun, sun.target);
   // земля до горизонта: пиксельная трава в масштабе вокселя (1 пиксель = 25 см)
   const tex = grassTexture();
-  tex.repeat.set(900 / 16, 900 / 16);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(900, 900), new THREE.MeshLambertMaterial({ map: tex }));
+  // мир тянется вдоль дороги на восток: деревни, река, районы города
+  tex.repeat.set(4000 / 16, 900 / 16);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(4000, 900), new THREE.MeshLambertMaterial({ map: tex }));
+  ground.position.x = 1500;
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -0.02;
   ground.receiveShadow = true;

@@ -1,4 +1,5 @@
 import { newGame } from '../sim/state';
+import { advanceDay } from '../sim/tick';
 import type { GameState } from '../sim/types';
 
 /** Код прогресса для переноса между устройствами (защита от очистки данных в Safari). */
@@ -33,15 +34,43 @@ function sameShape(ref: object, x: unknown): boolean {
 
 let REF: GameState | null = null;
 
+/** Дописывает в объект поля, которых нет в старом сохранении, значениями из новой игры. */
+function fill(ref: object, x: Record<string, unknown>) {
+  for (const [k, v] of Object.entries(ref)) if (!(k in x)) x[k] = structuredClone(v);
+}
+
 /**
- * Сохранение подходит, если у игры, компаний и точек есть все поля текущей версии.
- * Сохранения из ранних сборок (до этапа 1) отбрасываются, чтобы не ломать экран.
+ * Сохранение подходит, если это партия текущей версии. Поля, добавленные позже,
+ * дописываются значениями по умолчанию; неполная статистика дня сбрасывается
+ * (её пересчитает следующий день). Совсем чужие данные отбрасываются.
  */
 export function isGameState(x: unknown): x is GameState {
   REF ??= newGame(1);
   const s = x as GameState;
-  if (!sameShape(REF, s) || s.version !== REF.version || s.companies.length !== 2) return false;
+  if (!s || typeof s !== 'object' || s.version !== REF.version || !Array.isArray(s.companies) || s.companies.length !== 2) return false;
+  if (!s.companies.every((c) => c && typeof c.cash === 'number' && Array.isArray(c.points))) return false;
+  fill(REF, s as unknown as Record<string, unknown>);
   const co = REF.companies[0];
-  return s.companies.every((c) => sameShape(co, c) && sameShape(co.depts, c.depts)
-    && c.points.every((p) => sameShape(co.points[0], p)));
+  const pt = co.points[0];
+  const statKeys = Object.keys(simulatedStats());
+  for (const c of s.companies) {
+    fill(co, c as unknown as Record<string, unknown>);
+    fill(co.depts, c.depts as unknown as Record<string, unknown>);
+    for (const p of c.points) {
+      fill(pt, p as unknown as Record<string, unknown>);
+      if (p.last && !statKeys.every((k) => typeof (p.last as unknown as Record<string, unknown>)[k] === 'number')) p.last = null;
+    }
+  }
+  return sameShape(REF, s) && s.companies.every((c) => sameShape(co, c) && c.points.every((p) => sameShape(pt, p)));
+}
+
+let STATS: object | null = null;
+/** Образец статистики дня: точка новой игры после одного дня. */
+function simulatedStats(): object {
+  if (!STATS) {
+    const st = newGame(1);
+    advanceDay(st);
+    STATS = st.companies[0].points[0].last!;
+  }
+  return STATS;
 }

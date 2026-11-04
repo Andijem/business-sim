@@ -14,9 +14,21 @@ describe('код прогресса', () => {
     expect(importCode('не код')).toBeNull();
     expect(importCode(btoa('{"a":1}'))).toBeNull();
   });
-  it('старое сохранение без новых полей отбрасывается', () => {
-    const st = newGame(4) as unknown as { companies: { points: Record<string, unknown>[] }[] };
-    delete st.companies[0].points[0].rep;
-    expect(importCode(exportCode(st as never))).toBeNull();
+  it('старое сохранение дополняется новыми полями и не ломается', () => {
+    const st = newGame(4);
+    advanceDay(st);
+    const raw = st as unknown as { options?: unknown; companies: { points: Record<string, unknown>[] }[] };
+    delete raw.options;
+    delete raw.companies[0].points[0].newDays;
+    delete (raw.companies[0].points[0].last as Record<string, unknown>).waitPen;
+    const back = importCode(exportCode(st))!;
+    expect(back.options).toEqual(newGame(1).options);
+    expect(back.companies[0].points[0].newDays).toBe(7);
+    expect(back.companies[0].points[0].last).toBeNull();
+    advanceDay(back);
+    expect(back.companies[0].points[0].last?.waitPen).toBeTypeOf('number');
+  });
+  it('партия с чужой структурой отбрасывается', () => {
+    expect(importCode(exportCode({ version: 1, day: 3, companies: [{ cash: 1, points: [] }, {}] } as never))).toBeNull();
   });
 });

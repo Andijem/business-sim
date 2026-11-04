@@ -2,6 +2,10 @@ import { tk } from '../i18n';
 import { DEPTS, NICHES, VILLAGES, baseline, effect, findPoint, freeLot } from '../sim';
 import type { Action, GameState, NicheId, Raw, Seg, Try, WhatIf } from '../sim';
 
+/** Сколько деревень игрок захватывает с подсказками; дальше он играет сам. */
+export const ASSIST_VILLAGES = 3;
+export const assistOn = (st: GameState) => Object.keys(st.captured).length < ASSIST_VILLAGES;
+
 const money = (x: number) => Math.round(x).toLocaleString('ru-RU');
 const signed = (x: number) => (x >= 0 ? '+' : '−') + money(Math.abs(x));
 

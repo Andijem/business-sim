@@ -7,7 +7,8 @@ import {
 import type { GameEvent, GameState, NicheId, Point, Raw, Result, Seg } from '../sim';
 import { makeSmart } from '../sim/strategies';
 import { nextHint } from './tutorial';
-import { fxHtml, pointAction, tryAction } from './advice';
+import { ASSIST_VILLAGES, assistOn, fxHtml as fxRaw, pointAction, tryAction } from './advice';
+import { log } from '../sim';
 import './balance.css';
 
 const money = (x: number) => Math.round(x).toLocaleString('ru-RU');
@@ -74,6 +75,18 @@ export function mountBalance(
     set: (on: boolean) => { try { localStorage.setItem('temka.hints', on ? 'on' : 'off'); } catch { /* приватный режим */ } },
   };
   let hints = store.get();
+  /** Прогноз под кнопками и подсказки сами выключаются после трёх захваченных деревень (кнопка «Подсказки» вернёт их). */
+  const fxHtml: typeof fxRaw = (e) => (hints ? fxRaw(e) : '');
+  /** Игрок дорос до большого бизнеса: один раз выключаем подсказки и пишем об этом. */
+  function checkAssist(st: GameState) {
+    if (!assistOn(st) && !st.events.some((e) => e.key === 'ev.assistOff')) {
+      log(st, 'ev.assistOff', { n: ASSIST_VILLAGES });
+      hints = false;
+      store.set(false);
+      toast = t('ui.assistOff', { n: ASSIST_VILLAGES });
+      onChange(st);
+    }
+  }
 
   const act = (r: Result | boolean) => {
     toast = typeof r === 'object' && !r.ok ? tk(`ui.fail.${r.reason}`) : '';
@@ -316,11 +329,12 @@ export function mountBalance(
 
   function render() {
     const st = getState();
+    checkAssist(st);
     const me = st.companies[0];
     const rep = me.points.length ? me.points.reduce((a, p) => a + p.rep, 0) / me.points.length : 0;
     const dayProfit = me.points.reduce((a, p) => a + (p.last?.profit ?? 0), 0)
       - DEPTS.reduce((a, d) => a + ECO.deptUpkeep[me.depts[d]], 0);
-    const hint = nextHint(st);
+    const hint = hints ? nextHint(st) : { key: '' };
     const hintTab = hint.target ? TAB_OF[hint.target] : undefined;
     const hintHtml = hints
       ? `<div class="hint"><b>💡 ${t('tut.title')}</b> ${tk(hint.key, {

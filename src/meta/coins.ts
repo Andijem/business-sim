@@ -68,6 +68,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'ring1', coins: 200, done: (st) => ['novostroyki', 'zarechye', 'port', 'studgorodok'].every((v) => v in st.captured) },
   { id: 'kreditovka', coins: 120, done: (st) => 'kreditovka' in st.captured },
   { id: 'dolzhkovo', coins: 150, done: (st) => 'dolzhkovo' in st.captured },
+  { id: 'center', coins: 250, done: (st) => 'capitalCity' in st.captured },
+  { id: 'ring2', coins: 400, done: (st) => ['kupechesky', 'capitalCity', 'vokzalny', 'technopark'].every((v) => v in st.captured) },
 ];
 
 /** Новые достижения: отмечает их и начисляет монетки. */

@@ -1,0 +1,23 @@
+.balance {
+  position: fixed; inset: 0; overflow-y: auto; z-index: 20;
+  background: rgba(250, 247, 238, 0.97); color: #2a2a26;
+  font: 14px/1.4 system-ui, sans-serif; padding: 12px 16px 80px;
+  pointer-events: auto; touch-action: pan-y; -webkit-user-select: text; user-select: text;
+}
+.balance.hidden { display: none; }
+.balance header { display: flex; justify-content: space-between; align-items: center; position: sticky; top: -12px;
+  background: inherit; padding: 6px 0; z-index: 1; }
+.balance h3 { margin: 18px 0 6px; font-size: 15px; color: #2f6f62; }
+.balance .big { font-size: 17px; margin: 4px 0; }
+.balance .row { padding: 6px 0; border-bottom: 1px solid #e4dfd2; }
+.balance .muted { color: #8a857a; }
+.balance .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.balance button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 10px; border: 0;
+  background: #2f6f62; color: #fff; margin: 2px 2px 0 0; cursor: pointer; }
+.balance button.ghost { background: #e8e2d2; color: #2a2a26; }
+.balance .card { background: #fff; border-radius: 14px; padding: 10px 12px; margin: 6px 0; box-shadow: 0 1px 4px #0002; }
+.balance .card button { display: block; width: 100%; text-align: left; margin-top: 6px; }
+.balance .card button small { display: block; opacity: 0.8; font-size: 12px; }
+.balance .toast { background: #fbebeb; color: #8a2b2b; border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
+.balance .ev span { display: inline-block; min-width: 2.2em; color: #8a857a; }
+@media (min-width: 700px) { .balance { left: auto; width: 520px; box-shadow: -4px 0 20px #0002; } }

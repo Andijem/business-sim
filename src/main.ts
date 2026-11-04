@@ -4,7 +4,11 @@ import { VoxelStore } from './scene/voxels';
 import { buildVillage, COFFEE } from './scene/village';
 import { setupWorld } from './scene/world';
 import { makePin, mountHud } from './ui/hud';
+import { mountBalance } from './ui/balance';
 import { t } from './i18n';
+import { newGame, type GameState } from './sim';
+import { loadGame, saveGame } from './save/idb';
+import { exportCode, importCode } from './save/code';
 
 registerSW({ immediate: true });
 
@@ -28,7 +32,39 @@ const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 900);
 const target = new THREE.Vector3(-1, -2, -2);
 let yaw = Math.atan2(40, 60), dist = 85, pitch = 0.78;
 
-mountHud(ui);
+// Игра: состояние симуляции живёт здесь, сцена и экраны только показывают его.
+let state: GameState = newGame((Date.now() & 0x7fffffff) >>> 0);
+const persist = (st: GameState) => {
+  hud.update(st);
+  saveGame(st).catch(() => {});
+};
+const hud = mountHud(ui, () => balance.open());
+const balance = mountBalance(
+  ui,
+  () => state,
+  persist,
+  () => {
+    state = newGame((Date.now() & 0x7fffffff) >>> 0);
+    persist(state);
+  },
+  (code) => {
+    const st = importCode(code);
+    if (!st) return false;
+    state = st;
+    persist(state);
+    return true;
+  },
+  () => exportCode(state),
+);
+hud.update(state);
+loadGame().then((saved) => {
+  if (saved) {
+    state = saved.state;
+    hud.update(state);
+    balance.render();
+  }
+});
+if (location.hash === '#balance') balance.open();
 const pin = makePin(ui, '', t('shop.coffee'), t('village.kopeechkino'));
 const pinPos = new THREE.Vector3(COFFEE.x0 + COFFEE.w / 2, COFFEE.h + 3, COFFEE.z0 + COFFEE.d / 2);
 

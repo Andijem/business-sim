@@ -30,9 +30,10 @@ const wallOf = (seg: number) => (seg < 0 ? [0xd9d6cf, 0xcfccc4] : seg > 0 ? [0x5
 
 function person(s: VoxelStore, i: number, k: number, c: number, y = 0) {
   s.put(i, y, k, 0x3a3a48);
-  s.put(i, y + 1, k, c);
+  s.put(i, y + 1, k, 0x3a3a48);
   s.put(i, y + 2, k, c);
-  s.put(i, y + 3, k, SKIN);
+  s.put(i, y + 3, k, c);
+  s.put(i, y + 4, k, SKIN);
 }
 
 function sign(s: VoxelStore, x0: number, x1: number, y: number, z: number, c: number) {
@@ -69,10 +70,10 @@ function coffee(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
   b.fill(x0, 0.25, z0, x0 + 0.25, h, z1, wall);
   b.fill(x1 - 0.25, 0.25, z0, x1, h, z1, wall);
   // стойка и бариста
-  b.fill(x0 + 0.5, 0.25, z0 + 1, x1 - 0.5, 1, z0 + 1.5, WOOD);
-  b.fill(x0 + 0.5, 1, z0 + 1, x1 - 0.5, 1.25, z0 + 1.5, 0xe8e0d0);
-  b.fill(x0 + 0.75, 1.25, z0 + 1, x0 + 1.25, 1.75, z0 + 1.5, 0x40404a); // кофемашина
-  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 1.5 + n * 0.75), vi(z0 + 0.5), acc, 1);
+  b.fill(x0 + 0.5, 0.25, z0 + 1.25, x1 - 0.5, 0.75, z0 + 1.75, WOOD);
+  b.fill(x0 + 0.5, 0.75, z0 + 1.25, x1 - 0.5, 1, z0 + 1.75, 0xe8e0d0);
+  b.fill(x0 + 0.75, 1, z0 + 1.25, x0 + 1.25, 1.5, z0 + 1.75, 0x40404a); // кофемашина
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 1.75 + n * 0.75), vi(z0 + 0.5), acc, 1);
   // столики: по одному на уровень зала
   for (let n = 0; n <= p.hall; n++) {
     const x = x0 + 0.75 + n * 1.5;

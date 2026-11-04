@@ -48,7 +48,6 @@ export class People {
     this.body = new THREE.InstancedMesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), MATS.solid, MAX);
     this.head = new THREE.InstancedMesh(new THREE.BoxGeometry(0.25, 0.25, 0.25), MATS.solid, MAX);
     this.body.count = this.head.count = 0;
-    this.body.castShadow = true;
     this.body.frustumCulled = this.head.frustumCulled = false;
     this.group.add(this.body, this.head);
   }

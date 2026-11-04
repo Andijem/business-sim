@@ -34,7 +34,7 @@ export interface PlayScreen {
 const hintsOn = () => { try { return localStorage.getItem('temka.hints') !== 'off'; } catch { return true; } };
 
 /** Подсказка для сцены: те же правила, что в текстовом режиме, но первые дни объясняют новый экран. */
-function sceneHint(st: GameState): Hint {
+export function sceneHint(st: GameState): Hint {
   const h = nextHint(st);
   if (h.key === 'tut.firstDay') return { key: 'tut.scene.firstDay', target: 'skip' };
   if (h.key === 'tut.days') return { key: st.day < 2 ? 'tut.scene.tapPoint' : 'tut.scene.days', target: st.day < 2 ? 'strip' : 'skip' };

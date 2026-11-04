@@ -23,6 +23,9 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// тени пересчитываем, только когда сдвинулось солнце или камера: экономит батарею
+renderer.shadowMap.autoUpdate = false;
+let shadowHour = -1;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
@@ -273,6 +276,10 @@ function frame(now: number) {
   const busy = speed > 0 || crowd;
   if (dirty || moving || (busy && now - lastDraw > 32)) {
     lastDraw = now;
+    if (moving || dirty || Math.abs(hour - shadowHour) > 0.15) {
+      renderer.shadowMap.needsUpdate = true;
+      shadowHour = hour;
+    }
     dirty = false;
     placeCamera();
     renderer.render(scene, camera);

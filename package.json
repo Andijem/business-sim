@@ -1,0 +1,27 @@
+{
+  "name": "temka",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "description": "«Темка» — мобильный симулятор бизнеса (PWA)",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "phone": "vite build && vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "certs": "node scripts/certs.mjs"
+  },
+  "dependencies": {
+    "three": "^0.170.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "@types/three": "^0.170.0",
+    "@vitejs/plugin-basic-ssl": "^1.1.0",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vite-plugin-pwa": "^0.21.1",
+    "vitest": "^2.1.8"
+  }
+}

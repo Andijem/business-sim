@@ -411,6 +411,14 @@ function awayFor(sec: number) {
   balance.open({ kind: 'away', days, day0, cash0, max });
 }
 initSound();
+// iPhone: Safari может стереть данные сайта, если игра не на экране «Домой» — напоминаем один раз
+{
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const standalone = (navigator as unknown as { standalone?: boolean }).standalone || matchMedia('(display-mode: standalone)').matches;
+  let seen = false;
+  try { seen = localStorage.getItem('temka.a2hs') === '1'; localStorage.setItem('temka.a2hs', '1'); } catch { /* приватный режим */ }
+  if (ios && !standalone && !seen) setTimeout(() => play.toast(t('ui.a2hs')), 4000);
+}
 /** Монетки: ежедневный вход и достижения, которые уже есть в сохранении. */
 loadMetaNow().then((m) => {
   metaReady = true;

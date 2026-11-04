@@ -465,6 +465,7 @@ export function mountBalance(
           <div class="btns"><button data-a="close">${t('ui.sum.next')}</button></div>`;
       }
       case 'help': return `<h3>${t('tut.help')}</h3><div class="panel">${t('tut.scene.help')}</div><div class="panel">${t('tut.helpText')}</div>
+        <div class="panel muted">${t('ui.a2hsHelp')}</div>
         <div class="btns"><button class="ghost" data-a="hints">${hints ? t('tut.hide') : t('tut.show')}</button>
           <button class="ghost" data-a="sound">${soundOn() ? t('ui.soundOff') : t('ui.soundOn')}</button>
           <button class="ghost" data-a="music">${musicIsOn() ? t('ui.musicOff') : t('ui.musicOn')}</button></div>`;

@@ -138,8 +138,11 @@ export function endDay(st: GameState): { rain: boolean; afterRain: boolean } {
     }
   if (st.day % SEASON === SEASON - 1) seasonEnd(st);
   if (st.day % YEAR === YEAR - 1) {
-    for (const d of ECO.rival.yearlyDepts as DeptId[])
-      rival(st).depts[d] = Math.min(ECO.rival.deptCap, rival(st).depts[d] + 1);
+    for (const d of ECO.rival.yearlyDepts as DeptId[]) {
+      const was = rival(st).depts[d];
+      rival(st).depts[d] = Math.min(ECO.rival.deptCap, was + 1);
+      if (rival(st).depts[d] > was) log(st, 'ev.rivalInvest', { dept: d, level: rival(st).depts[d] });
+    }
   }
   if (st.options.rivalCloses) closeUnsold(st);
   if (st.options.finance) overdraft(st);

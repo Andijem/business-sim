@@ -23,6 +23,7 @@
 .balance .bar .cash em { display: block; font-style: normal; font-size: 12px; color: #c9f2c7; }
 .balance .bar .cash em.neg { color: #ffc9c0; }
 .balance .bar .meta { display: flex; flex-direction: column; align-items: flex-end; font-size: 12px; opacity: .9; }
+.balance .bar .meta button.link { color: #fff; font-size: 12px; padding: 0; }
 .balance .bar .time { grid-column: 1 / -1; display: flex; gap: 6px; }
 .balance .bar .time button { flex: 1; background: #fff; color: #2f6f62; font-weight: 700; padding: 9px; }
 .balance .bar .menu { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
@@ -81,3 +82,13 @@
 .balance table.bd .pos { color: #23623a; }
 .balance details.why { margin: 4px 0; background: #f7f4ec; border-radius: 10px; padding: 6px 8px; }
 .balance details.why summary { cursor: pointer; color: #2f6f62; font-weight: 600; }
+.balance .vstop { display: flex; align-items: baseline; gap: 8px; }
+.balance .vstop b { font-size: 22px; }
+.balance .vs { height: 10px; border-radius: 6px; background: #c9583f; overflow: hidden; margin: 4px 0; }
+.balance .vs i { display: block; height: 100%; background: #2f8a4e; }
+.balance .vslegend { display: flex; justify-content: space-between; font-size: 12px; color: #2f8a4e; }
+.balance .vslegend span:last-child { color: #c9583f; }
+.balance .vsrow { display: grid; grid-template-columns: 1fr 80px 40px; align-items: center; gap: 6px; padding: 6px 0; border-top: 1px solid #eee8da; font-size: 14px; }
+.balance .vsrow small { grid-column: 1 / -1; margin-top: -4px; }
+.balance .vshim { margin-top: 8px; font-size: 14px; }
+.balance h4 { margin: 12px 0 4px; font-size: 14px; }

@@ -2,7 +2,7 @@ import { t, tk } from '../i18n';
 import {
   DEPTS, ECO, NICHES, VILLAGES, buyDept, buyNicheUpgrade, buyout, buyoutPrice, cardDef, changeFormat, countPoints,
   deptCap, endDay, finishDay, fire, fixedCosts, forecast, freeLot, yesterday, hallPrice, hire, loanLimit, nicheUpgradePrice, openPoint,
-  openPrice, overdraftLimit, repFlow, repFromSat, seg, resolveCard, seasonOf, setManager, setPrice, setRaw, setUsn, takeLoan, upgradeHall,
+  openPrice, overdraftLimit, repFlow, rivalHistory, rivalry, repFromSat, seg, resolveCard, seasonOf, setManager, setPrice, setRaw, setUsn, takeLoan, upgradeHall,
 } from '../sim';
 import type { GameEvent, GameState, NicheId, Point, Raw, Result, Seg } from '../sim';
 import { makeSmart } from '../sim/strategies';
@@ -217,6 +217,30 @@ export function mountBalance(
       </div>`;
   }
 
+  /** Шкала «Ты против Хваткина»: доля рынка, расклад по нишам и лента его ходов. */
+  function rivalBlock(st: GameState): string {
+    const r = rivalry(st);
+    const rv = st.companies[1];
+    const pct = (x: number) => Math.round(x * 100);
+    const bar = (x: number) => `<div class="vs"><i style="width:${pct(x)}%"></i></div>`;
+    const trend = r.shareLastWeek == null ? ''
+      : ` <small class="muted">${t('ui.vs.week', { pct: pct(r.shareLastWeek) })}</small>`;
+    const verdict = r.share >= 0.6 ? 'lead' : r.share >= 0.45 ? 'even' : 'behind';
+    const rows = r.niches.map((n) => `<div class="vsrow"><span>${ICON[n.niche]} ${tk(`niche.${n.niche}`)} · ${tk(`village.${n.village}`)}</span>
+      ${bar(n.share)}<b>${pct(n.share)}%</b>
+      <small class="muted">${t('ui.vs.line', { mine: Math.round(n.mine), theirs: Math.round(n.theirs), pm: n.pointsMine, pt: n.pointsTheirs })}</small></div>`).join('');
+    const hist = rivalHistory(st).map((e) => `<div class="ev"><span>${e.day + 1}</span> ${eventText(e)}</div>`).join('')
+      || `<div class="muted">${t('ui.vs.quiet')}</div>`;
+    return `<h3>${t('ui.vs.title')}</h3><div class="panel">
+        <div class="vstop"><span>${t('ui.vs.share')}</span><b>${pct(r.share)}%</b>${trend}</div>
+        ${bar(r.share)}<div class="vslegend"><span>${t('ui.vs.me')}</span><span>${t('ui.vs.him')}</span></div>
+        <div class="muted">${tk(`ui.vs.${verdict}`)}</div>
+        ${rows}
+        <div class="vshim">${t('ui.vs.state', { points: rv.points.filter((p) => !p.forSale).length, mkt: rv.depts.mkt, hr: rv.depts.hr, cash: money(rv.cash) })}</div>
+        <details class="why"><summary>${t('ui.vs.howTitle')}</summary><div>${t('ui.vs.how')}</div></details>
+        <h4>${t('ui.vs.history')}</h4>${hist}</div>`;
+  }
+
   function manageTab(st: GameState): string {
     const me = st.companies[0];
     const villages = VILLAGES.map((V) => {
@@ -253,7 +277,8 @@ export function mountBalance(
       })}${p.forSale ? ` <span class="tag warn">${t('ui.forSale')}</span>` : ''}
       ${st.unlocked.includes(p.village) ? `<div class="btns"><button data-a="buyout" data-id="${p.id}">${t('ui.buyout', { cost: money(buyoutPrice(p)) })}</button></div>` : ''}</div>`).join('');
     const events = st.events.slice(-14).reverse().map((e) => `<div class="ev"><span>${e.day + 1}</span> ${eventText(e)}</div>`).join('');
-    return `<h3>${t('ui.villages')}</h3><div class="panel">${villages}</div>
+    return `${rivalBlock(st)}
+      <h3>${t('ui.villages')}</h3><div class="panel">${villages}</div>
       <h3>${t('ui.open')}</h3><div class="panel">${open.join('') || `<div class="muted">${t('ui.noLots')}</div>`}</div>
       <h3>${t('ui.depts')}</h3><div class="panel">${depts}</div>
       <h3>${t('ui.rival')}</h3><div class="panel">${rival}</div>
@@ -291,7 +316,7 @@ export function mountBalance(
       <div class="bar">
         <div class="cash"><small>${t('ui.cash')}</small><b>${money(me.cash)} Б</b><button class="link em ${dayProfit < 0 ? 'neg' : ''}" data-a="tab" data-v="money">${t('ui.fcShort', { y: signed(dayProfit), sign: signed(forecast(st).perDay) })}</button></div>
         <div class="meta"><span>${t('ui.dayLine', { day: st.day + 1, season: tk(`season.${seasonOf(st.day)}`), year: Math.floor(st.day / 28) + 1 })}</span>
-          <span>★ ${rep.toFixed(1)} · ${t('ui.pointsCount')}: ${me.points.length}</span></div>
+          <span>★ ${rep.toFixed(1)} · ${t('ui.pointsCount')}: ${me.points.length} · <button class="link" data-a="tab" data-v="manage">⚔️ ${Math.round(rivalry(st).share * 100)}%</button></span></div>
         <div class="time"><button data-a="day1">${t('ui.next1')}</button><button data-a="day7">${t('ui.next7')}</button></div>
         <div class="menu"><button class="link" data-a="help">${t('tut.help')}</button>
           ${hints ? '' : `<button class="link" data-a="hints">${t('tut.show')}</button>`}

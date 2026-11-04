@@ -60,7 +60,7 @@ export function nextHint(st: GameState): Hint {
   }
   for (const V of VILLAGES.filter((v) => st.unlocked.includes(v.id) && !(v.id in st.captured))) {
     for (const n of Object.keys(V.lots) as NicheId[]) {
-      if (freeLot(st, V.id, n) && me.cash >= openPrice(n, -1))
+      if (freeLot(st, V.id, n) && me.cash >= openPrice(n, -1, V.id))
         return { key: 'tut.open', params: { niche: n }, target: 'open' };
     }
   }

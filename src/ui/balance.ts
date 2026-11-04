@@ -174,7 +174,7 @@ export function mountBalance(
       <div class="grp"><small>${t('ui.grp.price')} · ${t('ui.priceNow', { price: p.priceIdx.toFixed(2), raw: tk(`raw.${p.raw}`) })}</small>
         ${ghost('priceDown', t('ui.priceDown'))}${ghost('priceUp', t('ui.priceUp'))}${([-1, 0, 1] as Raw[]).filter((r) => r !== p.raw).map((r) => ghost('raw', t('ui.raw', { raw: tk(`raw.${r}`) }), `data-v="${r}"`)).join('')}</div>
       <div class="grp"><small>${t('ui.grp.format')}</small>${SEG_LIST.filter((s) => s !== p.seg)
-        .map((s) => ghost('format', t('ui.format', { seg: tk(`seg.${s}`), cost: money(openPrice(p.niche, s) * ECO.formatChange.costShare) }), `data-v="${s}"`))
+        .map((s) => ghost('format', t('ui.format', { seg: tk(`seg.${s}`), cost: money(openPrice(p.niche, s, p.village) * ECO.formatChange.costShare) }), `data-v="${s}"`))
         .join('')}</div>
     </div>`;
   }
@@ -362,7 +362,7 @@ export function mountBalance(
   /** Кнопки открытия точки на свободном участке. */
   function openRow(st: GameState, v: string, n: NicheId): string {
     return `<div class="row"><b>${ICON[n]} ${tk(`niche.${n}`)}</b> · ${tk(`village.${v}`)}<div class="btns">${SEG_LIST.map(
-      (s) => `<button data-a="open" data-v="${v}|${n}|${s}">${tk(`segName.${n}.${s}`)} · ${money(openPrice(n, s))} Б${
+      (s) => `<button data-a="open" data-v="${v}|${n}|${s}">${tk(`segName.${n}.${s}`)} · ${money(openPrice(n, s, v))} Б${
         fxHtml(tryAction(st, { a: 'open', village: v, niche: n, seg: s }))}</button>`,
     ).join('')}<button class="ghost" data-a="openLoan" data-v="${v}|${n}|0">${t('ui.openLoan')}</button></div></div>`;
   }

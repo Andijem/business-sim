@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { registerSW } from 'virtual:pwa-register';
-import { VoxelStore } from './scene/voxels';
-import { buildVillages } from './scene/village';
+import { buildWorld } from './scene/village';
 import { setupWorld } from './scene/world';
 import { LotsView, type LotView } from './scene/lots';
 import { People } from './scene/people';
@@ -10,7 +9,7 @@ import { mountBalance } from './ui/balance';
 import { mountPlay } from './ui/play';
 import { NICHE_ICON } from './ui/icons';
 import { t, tk } from './i18n';
-import { OFFLINE_MAX_DAYS, catchUp, endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
+import { OFFLINE_MAX_DAYS, village, catchUp, endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
 import { checkAchievements, dailyLogin, offlineMax, timeMult } from './meta/coins';
 import { getMeta, loadMetaNow, saveMetaNow } from './meta/store';
 import { buzz, initSound, sfx } from './ui/sound';
@@ -34,9 +33,7 @@ app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const world = setupWorld(scene);
-const statics = new VoxelStore();
-buildVillages(statics);
-scene.add(statics.build());
+scene.add(buildWorld());
 const lots = new LotsView();
 scene.add(lots.group);
 const people = new People();
@@ -229,12 +226,12 @@ function syncPins() {
     const locked = !state.unlocked.includes(v.lot.village);
     const icon = NICHE_ICON[v.lot.niche] ?? '🏠';
     b.hidden = locked && !p;
-    b.className = !p ? 'free' : p.owner === 0 ? 'mine' : p.forSale ? 'sale' : 'rival';
+    b.className = !p ? 'free' : p.owner === 0 ? 'mine' : p.forSale ? 'sale' : village(p.village).city ? 'rival corp' : 'rival';
     b.innerHTML = !p
       ? `${icon} ${t('play.pin.free')}`
       : p.owner === 0
         ? `${icon} ★${p.rep.toFixed(1)}<small>${tk(`niche.${p.niche}`)}</small>`
-        : `${icon} ${p.forSale ? t('play.pin.sale') : t('play.pin.rival')}`;
+        : `${icon} ${p.forSale ? t('play.pin.sale') : village(p.village).city ? t('play.pin.rivalCity') : t('play.pin.rival')}`;
   }
 }
 play.pins.addEventListener('click', (e) => {

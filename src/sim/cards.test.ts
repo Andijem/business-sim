@@ -6,8 +6,8 @@ import { newGame } from './state';
 import { advanceDay } from './tick';
 
 describe('карточки решений', () => {
-  it('78 карточек (60 из v0.1 и 18 для ниш v0.2), у каждой есть осторожный вариант и тексты', () => {
-    expect(CARDS).toHaveLength(78);
+  it('96 карточек (60 из v0.1, по 18 для ниш v0.2 и v0.3), у каждой есть осторожный вариант и тексты', () => {
+    expect(CARDS).toHaveLength(96);
     expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
     for (const c of CARDS) {
       expect(c.options.filter((o) => o.cautious)).toHaveLength(1);

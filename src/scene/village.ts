@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import { VILLAGES } from '../sim';
 import { villageLots, villageX, templateOf, riverX, PLOT, DISTRICT_GAP, RIVER_GAP } from './layout';
 import { VoxelStore, vi, pick, hash, VS } from './voxels';
@@ -20,19 +21,55 @@ const halfOf = (city?: boolean) => (city ? DISTRICT_GAP / 2 : HALF);
  */
 export function buildVillages(s: VoxelStore) {
   const lastV = VILLAGES[VILLAGES.length - 1];
-  const first = -HALF, last = villageX(lastV.id) + halfOf(lastV.city);
-  // главная дорога через все деревни и город
-  s.fill(first, -0.25, 1, last, 0, 5, (i, j, k) => pick(P.road, i, j, k));
-  for (let x = first + 1; x < last; x += 2) s.fill(x, -0.25, 2.85, x + 1, 0, 3.15, P.paint);
+  road(s, -HALF, villageX(lastV.id) + halfOf(lastV.city));
   const rx = riverX();
   if (rx != null) river(s, rx);
   for (const V of VILLAGES) (V.city ? district : village)(s, V.id);
 }
 
+function road(s: VoxelStore, a: number, b: number) {
+  s.fill(a, -0.25, 1, b, 0, 5, (i, j, k) => pick(P.road, i, j, k));
+  for (let x = a + 1; x < b; x += 2) s.fill(x, -0.25, 2.85, Math.min(b, x + 1), 0, 3.15, P.paint);
+}
+
+/**
+ * Весь неизменный мир кусками: у каждой деревни и района свой набор мешей.
+ * Так three.js не рисует (и не считает в тенях) места, которые не попали в кадр.
+ */
+export function buildWorld(): THREE.Group {
+  const world = new THREE.Group();
+  const rx = riverX();
+  VILLAGES.forEach((V, i) => {
+    const s = new VoxelStore();
+    const x = villageX(V.id);
+    const prev = VILLAGES[i - 1], next = VILLAGES[i + 1];
+    // дорога от середины промежутка до середины следующего, но не по воде
+    let a = i === 0 ? x - HALF : (villageX(prev.id) + x) / 2;
+    let b = next ? (x + villageX(next.id)) / 2 : x + halfOf(V.city);
+    if (rx != null && !V.city && next?.city) b = rx - RIVER_GAP / 2 + 3;
+    if (rx != null && V.city && !prev?.city) a = rx + RIVER_GAP / 2 - 3;
+    road(s, a, b);
+    (V.city ? district : village)(s, V.id);
+    world.add(s.build());
+  });
+  if (rx != null) {
+    const s = new VoxelStore();
+    river(s, rx);
+    world.add(s.build());
+    const w = RIVER_GAP / 2 - 4;
+    const water = new THREE.Mesh(new THREE.PlaneGeometry(w * 2, 120), new THREE.MeshLambertMaterial({ color: 0x5a9ab8, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+    water.rotation.x = -Math.PI / 2;
+    water.position.set(rx, -0.01, 0);
+    water.receiveShadow = true;
+    world.add(water);
+  }
+  return world;
+}
+
 /** Река между деревнями и городом, через неё мост с перилами. */
 function river(s: VoxelStore, cx: number) {
   const w = RIVER_GAP / 2 - 4;
-  s.fill(cx - w, -0.75, -60, cx + w, -0.25, 60, (i, _j, k) => (hash(i, 5, k) > 0.9 ? 0x8fc6d8 : 0x5a9ab8));
+  // вода — отдельная плоскость (buildWorld), здесь берега и мост
   s.fill(cx - w - 0.5, -0.25, -60, cx - w, 0.25, 60, 0xb8a888);
   s.fill(cx + w, -0.25, -60, cx + w + 0.5, 0.25, 60, 0xb8a888);
   // мост: настил над водой и перила

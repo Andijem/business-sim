@@ -1,12 +1,15 @@
 import * as THREE from 'three';
-import { NICHES } from '../sim';
+import { NICHES, VILLAGES } from '../sim';
 import type { Point } from '../sim';
 import { PLOT, type Slot } from './layout';
 import { VoxelStore, hash, pick, vi, VS } from './voxels';
 import { NICHE_ICON } from '../ui/icons';
 
-/** Цвета хозяев: игрок — бирюза, Хваткин — красный. */
+/** Цвета хозяев: игрок — бирюза, Хваткин — красный, «Всё схвачено» в городе — тёмно-синий. */
 export const OWNER = [0x2f6f62, 0xc8302a];
+const CORP = 0x34406a;
+/** Цвет хозяина точки с учётом города. */
+const ownerColor = (p: Point) => (p.owner === 1 && VILLAGES.find((v) => v.id === p.village)?.city ? CORP : OWNER[p.owner]);
 const SKIN = 0xf0c8a8;
 const GLASS = 0xffd98f; // окна светятся вечером
 const WOOD = 0x6b4a36;
@@ -63,7 +66,7 @@ function coffee(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
   const x0 = (PLOT - w) / 2, x1 = x0 + w, z0 = 1, z1 = 5.75;
   const h = p.seg > 0 ? 3.5 : 3;
   const [wa, wb] = wallOf(p.seg);
-  const acc = OWNER[p.owner];
+  const acc = ownerColor(p);
   const wall = (_i: number, j: number) => (j % 3 === 0 ? wb : wa);
   // пол и стены (кроме фасада)
   b.fill(x0, 0, z0, x1, 0.25, z1, (i, _j, k) => ((i + k) % 2 ? 0xc9a27a : 0xb88f68));
@@ -111,7 +114,7 @@ function store(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
   const w = [5, 6, 6.5, 7][p.hall];
   const x0 = (PLOT - w) / 2, x1 = x0 + w, z0 = 0.75, z1 = 5.75, h = 3.25;
   const [wa, wb] = wallOf(p.seg);
-  const acc = OWNER[p.owner];
+  const acc = ownerColor(p);
   b.fill(x0, 0, z0, x1, 0.25, z1, (i, _j, k) => ((i + k) % 2 ? 0xe8e4dc : 0xd8d4cc));
   b.fill(x0, 0.25, z0, x1, h, z0 + 0.25, wa);
   b.fill(x0, 0.25, z0, x0 + 0.25, h, z1, wa);
@@ -142,7 +145,7 @@ function wash(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
   const bays = p.hall + 1;
   const bw = 1.5, w = bays * bw + 0.5;
   const x0 = (PLOT - w) / 2, z0 = 1, z1 = 5.5, h = 3;
-  const acc = OWNER[p.owner];
+  const acc = ownerColor(p);
   b.fill(x0, 0, z0, x0 + w, 0.25, PLOT - 0.25, 0x9a9aa2);
   for (let n = 0; n <= bays; n++) b.fill(x0 + n * bw, 0.25, z0, x0 + n * bw + 0.5, h, z1, 0xd9d6cf);
   b.fill(x0, 0.25, z0, x0 + w, h, z0 + 0.25, 0xd9d6cf);
@@ -166,7 +169,7 @@ function hallBox(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore, o: {
 }) {
   const w = Math.min(7, o.w), x0 = (PLOT - w) / 2, x1 = x0 + w, z0 = o.z0 ?? 1, z1 = o.z1 ?? 5.75, h = o.h ?? 3;
   const [wa, wb] = o.wall ?? wallOf(p.seg);
-  const acc = OWNER[p.owner];
+  const acc = ownerColor(p);
   b.fill(x0, 0, z0, x1, 0.25, z1, (i, _j, k) => ((i + k) % 2 ? o.floor[0] : o.floor[1]));
   const wall = (_i: number, j: number) => (j % 3 === 0 ? wb : wa);
   b.fill(x0, 0.25, z0, x1, h, z0 + 0.25, wall);
@@ -285,7 +288,7 @@ function shawarma(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
 function garage(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore, tires: boolean) {
   const bays = Math.min(4, p.hall + 1);
   const w = Math.min(7, bays * 1.75 + 0.5), x0 = (PLOT - w) / 2, z0 = 0.75, z1 = 5.5, h = 3;
-  const acc = OWNER[p.owner];
+  const acc = ownerColor(p);
   b.fill(x0, 0, z0, x0 + w, 0.25, PLOT - 0.25, 0x8a8a92);
   b.fill(x0, 0.25, z0, x0 + w, h, z0 + 0.25, 0xcfccc4);
   b.fill(x0, 0.25, z0, x0 + 0.25, h, z1, 0xcfccc4);

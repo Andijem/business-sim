@@ -394,9 +394,69 @@ function cleaning(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
   sign(r, x0 + 0.5, x1 - 0.5, h + 0.25, z1 - 0.75, 0xfaf2e6);
 }
 
+/** Ресторан: высокий зал с панорамными окнами, столы со скатертями и веранда. */
+function restaurant(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z0, z1, h, acc } = hallBox(p, b, r, f, { w: 5 + p.hall * 0.5, h: 3.5, floor: [0x7a4a36, 0x6b3f2e], wall: [0x8a3a3a, 0x7a3232], roof: 0x3a2a2a, awning: 0x8a3a3a });
+  for (let n = 0; n < Math.min(4, p.hall + 2); n++) {
+    const x = x0 + 0.75 + (n % 2) * 2, z = z0 + 0.75 + Math.floor(n / 2) * 1.75;
+    if (x + 1 > x1 - 0.25) continue;
+    b.fill(x, 0.25, z, x + 1, 0.75, z + 0.75, 0xfaf2e6);
+  }
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 1 + n * 0.75), vi(z1 - 1), acc);
+  for (let x = x0 + 0.5; x < x1 - 0.5; x += 1.5) b.fill(x, 0, z1 + 0.75, x + 0.75, 0.75, z1 + 1.25, 0xfaf2e6); // веранда
+  sign(r, x0 + 0.5, x1 - 0.5, h + 0.25, z1 - 0.75, 0xd9b45a);
+}
+
+/** Сувениры: лавка с витриной, матрёшки и магниты на прилавке у входа. */
+function souvenirs(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z1, h, acc } = hallBox(p, b, r, f, { w: 3.5 + p.hall * 0.75, h: 2.75, floor: [0xd8c8a8, 0xc8b898], wall: [0xf2e6c8, 0xe6d8b4], roof: 0xb83a3a, awning: 0xd9a441, pitched: true });
+  b.fill(x0 + 0.5, 0, z1 + 0.5, x1 - 0.5, 0.75, z1 + 1, WOOD); // прилавок
+  for (let x = x0 + 0.75; x < x1 - 0.75; x += 0.75) {
+    b.fill(x, 0.75, z1 + 0.5, x + 0.25, 1.25, z1 + 0.75, (vi(x) % 3) ? 0xd84a3a : 0xf2c230, true);
+  }
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 1 + n * 0.75), vi(z1 - 1.5), acc);
+  sign(r, x0 + 0.25, x1 - 0.25, h + 0.75, z1 - 0.75, 0xfaf2e6);
+}
+
+/** Экскурсии: киоск с табличкой и туристический автобус. */
+function excursions(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z0, z1, h, acc } = hallBox(p, b, r, f, { w: 2.5 + p.hall * 0.5, h: 2.5, floor: [0xd8d4cc, 0xc8c4bc], wall: [0xe8f0f4, 0xd8e4ea], roof: 0x3a7ab8, awning: 0x3a7ab8 });
+  const bx = Math.min(x1 + 0.5, PLOT - 2);
+  if (bx + 1.75 <= PLOT) {
+    b.fill(bx, 0.25, z0, bx + 1.75, 2, z1 - 0.5, 0xf2c230); // автобус
+    for (let z = z0 + 0.5; z < z1 - 1; z += 1) f.putGlow(vi(bx), vi(1.25), vi(z), GLASS);
+    b.fill(bx, 2, z0, bx + 1.75, 2.25, z1 - 0.5, acc);
+  }
+  for (let n = 0; n < p.staff; n++) {
+    const x = 0.5 + n * 0.75;
+    if (x > PLOT - 0.75) break;
+    person(b, vi(x), vi(z1 + 1.25), acc);
+    b.fill(x + 0.25, 1.5, z1 + 1.25, x + 0.5, 2, z1 + 1.5, acc, true); // флажок гида
+  }
+  sign(r, x0, x1, h + 0.25, z1 - 0.75, 0xfaf2e6);
+}
+
+/** Каршеринг: стоянка с машинами в фирменном цвете и будка оператора. */
+function carsharing(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const acc = ownerColor(p);
+  b.fill(0.25, 0, 0.5, PLOT - 0.25, 0.25, 6, 0x6a6a72);
+  for (let x = 0.5; x < PLOT - 0.5; x += 1.75) b.fill(x, 0.25, 0.75, x + 0.25, 0.3, 5.5, 0xf4f4f4);
+  const cars = Math.min(8, p.staff + p.hall + 1);
+  for (let n = 0; n < cars; n++) {
+    const x = 0.75 + (n % 4) * 1.75, z = n < 4 ? 1 : 3.5;
+    b.fill(x, 0.25, z, x + 1.25, 0.75, z + 2, 0x58b8a8);
+    b.fill(x + 0.25, 0.75, z + 0.5, x + 1, 1.25, z + 1.5, 0x2a3a4a);
+    b.fill(x, 0.25, z, x + 0.25, 0.5, z + 0.25, acc);
+  }
+  r.fill(PLOT - 1.5, 0.25, 5.75, PLOT - 0.25, 2.25, 6.75, 0xeef4f6);
+  r.fill(PLOT - 1.75, 2.25, 5.5, PLOT, 2.5, 7, acc);
+  f.putGlow(vi(PLOT - 1), vi(1.25), vi(6.75), GLASS);
+}
+
 const BUILDERS: Record<string, (p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) => void> = {
   coffee, store, wash, farm, bakery, guesthouse, resortCafe, fish, rental,
   shawarma, tyre, carService, canteen, laundry, couriers, nannies, beauty, techRepair, cleaning,
+  restaurant, souvenirs, excursions, carsharing,
 };
 
 /** Собирает здание точки (или пустой участок) в локальных координатах участка, фасадом на +z. */

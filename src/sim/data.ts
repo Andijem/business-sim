@@ -81,6 +81,8 @@ export interface VillageDef {
   mix?: number[];
   /** Поток района по сезонам (Студгородок пустеет летом). */
   seasonFlow?: number[];
+  /** Поток района по дням недели (деловой центр пустеет в выходные). */
+  weekdayFlow?: number[];
   /** «Всё схвачено»: доля участков каждой ниши, навык, звёзды, персонал и зал его точек. */
   rival?: { share: number; skill: number; rep: number; staff: number; hall: number };
   /** Во сколько раз дороже открытие, зал и прокачки (город). */

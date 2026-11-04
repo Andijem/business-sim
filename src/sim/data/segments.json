@@ -1,0 +1,12 @@
+{
+  "rawQuality": [35, 55, 75],
+  "villageMix": [0.5, 0.4, 0.1],
+  "segments": [
+    { "id": "econ", "open": 0.6, "price": 0.7, "cogs": 0.65, "q": -15, "elast": 1.3, "wage": 0.85, "rent": 0.6,
+      "speed": 1.3, "reach": [1.0, 0.5, 0.0], "sat": [0.35, 0.25, 0.40], "need": 0 },
+    { "id": "mid", "open": 1.0, "price": 1.0, "cogs": 1.0, "q": 0, "elast": 1.0, "wage": 1.0, "rent": 1.0,
+      "speed": 1.0, "reach": [0.25, 1.0, 0.25], "sat": [0.45, 0.30, 0.25], "need": 0 },
+    { "id": "premium", "open": 1.8, "price": 1.8, "cogs": 1.6, "q": 20, "elast": 0.6, "wage": 1.3, "rent": 1.4,
+      "speed": 0.75, "reach": [0.0, 0.5, 1.0], "sat": [0.50, 0.40, 0.10], "need": 70 }
+  ]
+}

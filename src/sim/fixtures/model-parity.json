@@ -1,0 +1,74 @@
+{
+  "passive": [
+    {"captured": {}, "cash": [45356, 117402, 170683, 199529]},
+    {"captured": {}, "cash": [64906, 137401, 171854, 186966]},
+    {"captured": {}, "cash": [63798, 148138, 192117, 216851]},
+    {"captured": {}, "cash": [65152, 148038, 201388, 237779]},
+    {"captured": {}, "cash": [56138, 138902, 187417, 211840]},
+    {"captured": {}, "cash": [53641, 124432, 169456, 206501]},
+    {"captured": {}, "cash": [64906, 148945, 193780, 220369]},
+    {"captured": {}, "cash": [63997, 139703, 192805, 228529]},
+    {"captured": {}, "cash": [64906, 129645, 183035, 199376]},
+    {"captured": {}, "cash": [65017, 147695, 183560, 208214]}
+  ],
+  "smart": [
+    {"captured": {"kopeechkino": 61, "barysh": 130}, "cash": [23061, 85817, 282849, 991070]},
+    {"captured": {"kopeechkino": 64, "barysh": 117}, "cash": [44263, 80477, 276672, 2101913]},
+    {"captured": {"kopeechkino": 54, "barysh": 115}, "cash": [43054, 81740, 283914, 2305953]},
+    {"captured": {"kopeechkino": 53, "barysh": 108}, "cash": [44518, 95127, 383659, 3090967]},
+    {"captured": {"kopeechkino": 58, "barysh": 116}, "cash": [34985, 93280, 227056, 1777559]},
+    {"captured": {"kopeechkino": 107}, "cash": [32246, 103544, 168081, 236507]},
+    {"captured": {"kopeechkino": 53, "barysh": 107}, "cash": [44263, 119329, 382276, 3427543]},
+    {"captured": {"kopeechkino": 53, "barysh": 113}, "cash": [43196, 111499, 296934, 2539559]},
+    {"captured": {"kopeechkino": 67, "barysh": 124}, "cash": [44263, 61477, 438272, 1362479]},
+    {"captured": {"kopeechkino": 54, "barysh": 109}, "cash": [44392, 87957, 329346, 2493347]}
+  ],
+  "mix": [
+    {"captured": {"kopeechkino": 47, "barysh": 100}, "cash": [23061, 182285, 339348, 3487676]},
+    {"captured": {"kopeechkino": 54, "barysh": 108}, "cash": [44263, 76643, 352215, 3515601]},
+    {"captured": {"kopeechkino": 39, "barysh": 113}, "cash": [43054, 272482, 306125, 3049874]},
+    {"captured": {"kopeechkino": 51, "barysh": 99}, "cash": [44518, 170640, 586165, 4665213]},
+    {"captured": {"kopeechkino": 50, "barysh": 98}, "cash": [34985, 188197, 437645, 4723810]},
+    {"captured": {"kopeechkino": 89, "barysh": 149}, "cash": [32246, 103544, 413170, 626443]},
+    {"captured": {"kopeechkino": 39, "barysh": 117}, "cash": [44263, 292179, 242608, 2256263]},
+    {"captured": {"kopeechkino": 40, "barysh": 103}, "cash": [43196, 317027, 376793, 3922099]},
+    {"captured": {"kopeechkino": 53, "barysh": 110}, "cash": [44263, 93358, 346249, 3138055]},
+    {"captured": {"kopeechkino": 40, "barysh": 95}, "cash": [44392, 318248, 359403, 4642996]}
+  ],
+  "econ": [
+    {"captured": {"kopeechkino": 54, "barysh": 102}, "cash": [19703, 76420, 345619, 2082367]},
+    {"captured": {"kopeechkino": 58, "barysh": 103}, "cash": [30890, 70616, 282279, 1752521]},
+    {"captured": {"kopeechkino": 45, "barysh": 88}, "cash": [30184, 218887, 465557, 2862948]},
+    {"captured": {"kopeechkino": 44, "barysh": 86}, "cash": [31188, 241733, 298696, 2894433]},
+    {"captured": {"kopeechkino": 46, "barysh": 86}, "cash": [22586, 188891, 285312, 2749964]},
+    {"captured": {"kopeechkino": 68, "barysh": 110}, "cash": [21062, 65448, 238829, 1361376]},
+    {"captured": {"kopeechkino": 46, "barysh": 88}, "cash": [30890, 214065, 386419, 3044341]},
+    {"captured": {"kopeechkino": 47, "barysh": 87}, "cash": [30220, 197386, 312476, 2671669]},
+    {"captured": {"kopeechkino": 46, "barysh": 95}, "cash": [30890, 179392, 318143, 2525187]},
+    {"captured": {"kopeechkino": 43, "barysh": 89}, "cash": [31007, 241757, 279348, 2586242]}
+  ],
+  "greedy": [
+    {"captured": {"kopeechkino": 81}, "cash": [22567, 65147, 384328, 247811]},
+    {"captured": {"kopeechkino": 86}, "cash": [43612, 61098, 401384, 264363]},
+    {"captured": {"kopeechkino": 82, "barysh": 165}, "cash": [42522, 88643, 407990, 291029]},
+    {"captured": {"kopeechkino": 68, "barysh": 145}, "cash": [43868, 83814, 230472, 317961]},
+    {"captured": {"kopeechkino": 75, "barysh": 156}, "cash": [34404, 57913, 97019, 267245]},
+    {"captured": {"kopeechkino": 89}, "cash": [31795, 112425, 352087, 250666]},
+    {"captured": {"kopeechkino": 74, "barysh": 162}, "cash": [43612, 55660, 120098, 258684]},
+    {"captured": {"kopeechkino": 81, "barysh": 165}, "cash": [42658, 105827, 463350, 290348]},
+    {"captured": {"kopeechkino": 88, "barysh": 159}, "cash": [43612, 75370, 397332, 300030]},
+    {"captured": {"kopeechkino": 80, "barysh": 158}, "cash": [43740, 56774, 442523, 282463]}
+  ],
+  "premium": [
+    {"captured": {"kopeechkino": 101}, "cash": [26867, 139834, 357906, 431153]},
+    {"captured": {"kopeechkino": 93, "barysh": 165}, "cash": [39031, 99729, 577988, 420697]},
+    {"captured": {"kopeechkino": 74, "barysh": 141}, "cash": [37232, 159423, 137013, 589426]},
+    {"captured": {"kopeechkino": 79, "barysh": 145}, "cash": [39176, 156840, 148782, 610571]},
+    {"captured": {"kopeechkino": 81, "barysh": 151}, "cash": [28597, 122030, 823290, 475761]},
+    {"captured": {"kopeechkino": 93, "barysh": 157}, "cash": [30661, 145398, 610461, 487279]},
+    {"captured": {"kopeechkino": 74, "barysh": 144}, "cash": [39031, 158897, 319255, 696186]},
+    {"captured": {"kopeechkino": 79, "barysh": 145}, "cash": [37470, 146120, 204383, 595782]},
+    {"captured": {"kopeechkino": 92, "barysh": 150}, "cash": [39031, 154939, 755235, 448506]},
+    {"captured": {"kopeechkino": 80, "barysh": 143}, "cash": [39122, 160897, 177522, 578440]}
+  ]
+}

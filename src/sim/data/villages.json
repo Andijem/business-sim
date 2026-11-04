@@ -1,0 +1,31 @@
+{
+  "marketK": 1.0,
+  "trafficRent": { "1.25": 1.3, "1": 1.0, "0.8": 0.7 },
+  "villages": [
+    { "id": "kopeechkino", "rent": 1.0,
+      "market": { "coffee": 420, "store": 750 },
+      "lots": { "store": 3, "coffee": 4 },
+      "traffic": { "coffee": [1.25, 1.25, 1.0, 0.8], "store": [1.25, 1.0, 0.8] },
+      "unlocks": "barysh" },
+    { "id": "barysh", "rent": 1.15,
+      "market": { "coffee": 300, "store": 570, "wash": 150 },
+      "lots": { "wash": 4, "store": 3, "coffee": 3 },
+      "traffic": { "wash": [1.25, 1.0, 1.0, 0.8], "store": [1.25, 1.25, 1.0], "coffee": [1.25, 1.0, 0.8] },
+      "unlocks": null }
+  ],
+  "start": {
+    "playerCash": 40000,
+    "rivalCash": 150000,
+    "rivalSkill": 50,
+    "player": { "niche": "coffee", "village": "kopeechkino" },
+    "rival": [
+      { "niche": "coffee", "village": "kopeechkino", "priceIdx": 0.95, "rep": 3.2 },
+      { "niche": "coffee", "village": "kopeechkino", "priceIdx": 1.0, "rep": 3.0 },
+      { "niche": "store", "village": "kopeechkino", "staff": 2, "rep": 3.2 },
+      { "niche": "coffee", "village": "barysh", "priceIdx": 0.95 },
+      { "niche": "store", "village": "barysh", "staff": 2 },
+      { "niche": "store", "village": "barysh", "staff": 1, "rep": 3.0 },
+      { "niche": "wash", "village": "barysh", "staff": 2, "rep": 3.1 }
+    ]
+  }
+}

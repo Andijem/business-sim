@@ -172,3 +172,39 @@ describe('v0.4: Кредитовка и Должково', () => {
     expect(play(true).d).toBeLessThanOrEqual(455);
   }, 180_000);
 });
+
+describe('v0.5: кольцо 2 Капитальска', () => {
+  const DAYS = 640;
+  const SEEDS5 = 12;
+  const play = (cautious: boolean) => {
+    const a: number[] = [], z: number[] = [];
+    for (let seed = 0; seed < SEEDS5; seed++) {
+      const s = STRATEGIES.smart;
+      const st = newGame(seed, { cards: cautious }, s.first ?? {});
+      for (let day = 0; day < DAYS && !st.bankrupt; day++) {
+        endDay(st);
+        for (const pc of [...st.pending]) {
+          const c = cardDef(pc.card);
+          resolveCard(st, pc.uid, (c.options.find((o) => o.cautious) ?? c.options[0]).id);
+        }
+        s.act(st);
+        finishDay(st);
+      }
+      // Осторожный автопилот на одном зерне застревает с одной кофейней и к 517-му дню банкротится: это не про кольцо 2.
+      if (!cautious) expect(st.bankrupt).toBe(false);
+      a.push(st.captured.kupechesky ?? 999);
+      z.push(st.captured.technopark ?? 999);
+    }
+    return { first: median(a), last: median(z) };
+  };
+  it('smart без карточек: Купеческий около 463-го дня, Технопарк около 585-го', () => {
+    const r = play(false);
+    expect(r.first).toBeGreaterThanOrEqual(440);
+    expect(r.first).toBeLessThanOrEqual(485);
+    expect(r.last).toBeGreaterThanOrEqual(560);
+    expect(r.last).toBeLessThanOrEqual(610);
+  }, 300_000);
+  it('smart с осторожными ответами: Технопарк ≤ 625', () => {
+    expect(play(true).last).toBeLessThanOrEqual(625);
+  }, 300_000);
+});

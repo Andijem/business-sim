@@ -374,9 +374,29 @@ function techRepair(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
   sign(r, x0 + 0.25, x1 - 0.25, h + 0.25, z1 - 0.75, 0x5fa8c8);
 }
 
+/** Клининг: офис бригады с микроавтобусом, вёдрами и швабрами у входа. */
+function cleaning(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z0, z1, h, acc } = hallBox(p, b, r, f, { w: 4 + p.hall * 0.5, floor: [0xe4ecf0, 0xd4dee4], wall: [0xf2f6f8, 0xe2eaee], roof: 0x58b8a8, awning: 0x58b8a8 });
+  for (let n = 0; n < 3; n++) {
+    b.fill(x0 + 0.5 + n * 0.75, 0.25, z0 + 0.5, x0 + 1 + n * 0.75, 0.75, z0 + 1, 0x58b8a8);
+    b.fill(x0 + 0.75 + n * 0.75, 0.75, z0 + 0.75, x0 + 1 + n * 0.75, 2, z0 + 1, WOOD);
+  }
+  for (let n = 0; n < p.staff; n++) {
+    const x = 0.5 + n * 0.75;
+    if (x > PLOT - 0.75) break;
+    person(b, vi(x), vi(z1 + 1.25), acc);
+    b.fill(x + 0.25, 0.25, z1 + 1.5, x + 0.5, 0.5, z1 + 1.75, 0x58b8a8, true); // ведро
+  }
+  if (x1 - x0 > 5) {
+    b.fill(x1 - 2.25, 0.25, z0 + 1, x1 - 0.5, 1.5, z0 + 3.25, 0xf4f4f4); // микроавтобус
+    b.fill(x1 - 2.25, 0.75, z0 + 1, x1 - 0.5, 1, z0 + 3.25, acc);
+  }
+  sign(r, x0 + 0.5, x1 - 0.5, h + 0.25, z1 - 0.75, 0xfaf2e6);
+}
+
 const BUILDERS: Record<string, (p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) => void> = {
   coffee, store, wash, farm, bakery, guesthouse, resortCafe, fish, rental,
-  shawarma, tyre, carService, canteen, laundry, couriers, nannies, beauty, techRepair,
+  shawarma, tyre, carService, canteen, laundry, couriers, nannies, beauty, techRepair, cleaning,
 };
 
 /** Собирает здание точки (или пустой участок) в локальных координатах участка, фасадом на +z. */

@@ -177,9 +177,14 @@ export function advanceDay(st: GameState) {
   finishDay(st);
 }
 
-/** Офлайн-прогресс: пока игра закрыта, дни идут сами (автопилот), но не больше лимита. */
+/**
+ * Офлайн-прогресс: пока игра закрыта, дни идут сами (автопилот), но медленнее, чем в игре:
+ * 10–15 минут активной игры, потом 3–4 часа офлайна набирают неделю (решение FAJI).
+ */
 export const OFFLINE_MAX_DAYS = 7;
-export function catchUp(st: GameState, awaySec: number, daySec: number, maxDays = OFFLINE_MAX_DAYS): number {
+/** Сколько секунд отсутствия стоит один день автопилота: 30 минут, неделя за 3,5 часа. */
+export const OFFLINE_DAY_SEC = 30 * 60;
+export function catchUp(st: GameState, awaySec: number, daySec = OFFLINE_DAY_SEC, maxDays = OFFLINE_MAX_DAYS): number {
   const days = Math.max(0, Math.min(maxDays, Math.floor(awaySec / daySec)));
   for (let i = 0; i < days && !st.bankrupt; i++) advanceDay(st);
   return days;

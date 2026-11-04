@@ -375,7 +375,7 @@ play.update();
 /** Пока игры не было на экране, дни шли сами: догоняем и показываем, что случилось. */
 function awayFor(sec: number) {
   const day0 = state.day, cash0 = state.companies[0].cash;
-  const days = catchUp(state, sec, DAY_SEC);
+  const days = catchUp(state, sec);
   if (!days) return;
   hour = DAY_START;
   persist(state);

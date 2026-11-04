@@ -21,6 +21,13 @@ export const pick = <T>(arr: readonly T[], i: number, j: number, k: number): T =
 /** Перевод мировой координаты в индекс вокселя. */
 export const vi = (u: number) => Math.floor(u / VS + 1e-6);
 
+/** Общие материалы: время суток меняет цвет светящихся окон сразу у всех зданий. */
+export const MATS = {
+  solid: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+  glow: new THREE.MeshBasicMaterial({ color: 0xffffff }),
+};
+const GEO = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+
 export class VoxelStore {
   readonly solid = new Map<number, [number, number, number, number]>();
   readonly glow = new Map<number, [number, number, number, number]>();
@@ -75,11 +82,11 @@ export class VoxelStore {
 
   /**
    * Собирает два InstancedMesh: обычные воксели (освещаются) и светящиеся (окна, фары).
-   * Этап 0: по кубу на воксель. Склейку граней (greedy meshing) добавим на этапе 2.
+   * По кубу на воксель через InstancedMesh: на телефоне держит ~100 тыс. кубов.
    */
   build(): THREE.Group {
     const group = new THREE.Group();
-    const geo = new THREE.BoxGeometry(VS, VS, VS);
+    const geo = GEO;
     const make = (list: [number, number, number, number][], mat: THREE.Material, shadows: boolean) => {
       const mesh = new THREE.InstancedMesh(geo, mat, Math.max(1, list.length));
       mesh.count = list.length;
@@ -96,8 +103,9 @@ export class VoxelStore {
       group.add(mesh);
       return mesh;
     };
-    make(this.visibleSolid(), new THREE.MeshLambertMaterial({ color: 0xffffff }), true);
-    make([...this.glow.values()], new THREE.MeshBasicMaterial({ color: 0xffffff }), false);
+    const solid = this.visibleSolid();
+    if (solid.length) make(solid, MATS.solid, true);
+    if (this.glow.size) make([...this.glow.values()], MATS.glow, false);
     return group;
   }
 }

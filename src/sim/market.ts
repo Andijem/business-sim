@@ -54,12 +54,15 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
       let mult = N.season[season] * N.weekday[wd];
       const weather = niche === 'wash' ? (rain ? 0.45 : afterRain ? 1.6 : 1.0) : 1.0;
       if (niche === 'wash') mult *= weather;
+      // Погода у курорта и рыбы: дождь, сухо, шторм (дождь осенью и зимой).
+      const storm = rain && season >= 2;
       const qs = new Map<Point, number>();
       const A = new Map<Point, number>();
       for (const p of open) qs.set(p, quality(p, st.companies[p.owner]));
       for (const p of open) A.set(p, attractiveness(p, st.companies[p.owner], qs.get(p)!));
       const dem = new Map<Point, number>(open.map((p) => [p, 0]));
-      VILLAGE_MIX.forEach((share, si) => {
+      const mix = (season === 1 && V.summerMix) || VILLAGE_MIX;
+      mix.forEach((share, si) => {
         const As = new Map<Point, number>(open.map((p) => [p, A.get(p)! * seg(p.seg).reach[si]]));
         let tot = N.outside;
         for (const p of open) tot += As.get(p)!;
@@ -72,7 +75,10 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         // Абонементы мойки сглаживают погоду: поправка к общему погодному множителю.
         const myWeather = rain ? Math.max(weather, fx.rainFloor) : Math.min(weather, fx.afterRainCap);
         const wfix = niche === 'wash' && myWeather !== weather ? myWeather / weather : 1;
-        const demand = dem.get(p)! * MARKET_K * wfix * fx.flowMult * modMult(p, 'flow');
+        const off = season !== 1 ? fx.offSeasonFlow : 1;
+        const W = N.weather;
+        const nw = W ? (storm && W.storm != null ? Math.max(W.storm, fx.stormFloor) : rain ? W.rain : W.dry) : 1;
+        const demand = dem.get(p)! * MARKET_K * wfix * nw * fx.flowMult * off * modMult(p, 'flow');
         let capH =
           (p.staff + fx.freeStaff) * N.perStaffH * N.hallSpeed[p.hall] * (0.5 + p.skill / 100) * S.speed *
           fx.capMult * (season === 1 ? fx.summerCapMult : 1) * modMult(p, 'capacity');
@@ -96,7 +102,7 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         }
         const rev = served * unitPrice(p);
         const cogsU =
-          N.cogs * S.cogs * N.rawCost[p.raw + 1] * (1 - 0.02 * co.depts.buy) * fx.cogsMult * modMult(p, 'cogs');
+          (N.seasonCogs ? N.seasonCogs[season] : 1) * N.cogs * S.cogs * N.rawCost[p.raw + 1] * (1 - 0.02 * co.depts.buy) * fx.cogsMult * modMult(p, 'cogs');
         let cogs = served * cogsU;
         if (N.spoil > 0) cogs += served * cogsU * Math.max(0.01, N.spoil * fx.spoilMult - 0.007 * co.depts.buy);
         const fixed = fixedCosts(p);

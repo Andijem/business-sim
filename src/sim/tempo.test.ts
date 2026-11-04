@@ -66,3 +66,39 @@ describe('осторожная игра стоит 10–15% темпа (реше
     expect(median(b)).toBeLessThanOrEqual(130);
   });
 });
+
+describe('v0.2: Грошево и Наваринка', () => {
+  const DAYS = 224;
+  const play = (cautious: boolean) => {
+    const g: number[] = [], n: number[] = [];
+    for (let seed = 0; seed < SEEDS; seed++) {
+      const s = STRATEGIES.smart;
+      const st = newGame(seed, { cards: cautious }, s.first ?? {});
+      for (let d = 0; d < DAYS && !st.bankrupt; d++) {
+        endDay(st);
+        for (const pc of [...st.pending]) {
+          const c = cardDef(pc.card);
+          resolveCard(st, pc.uid, (c.options.find((o) => o.cautious) ?? c.options[0]).id);
+        }
+        s.act(st);
+        finishDay(st);
+      }
+      expect(st.bankrupt).toBe(false);
+      g.push(st.captured.grosh ?? 999);
+      n.push(st.captured.navarinka ?? 999);
+    }
+    return { g: median(g), n: median(n) };
+  };
+  it('smart без карточек: Грошево около 143-го дня, Наваринка около 179-го', () => {
+    const r = play(false);
+    expect(r.g).toBeGreaterThanOrEqual(130);
+    expect(r.g).toBeLessThanOrEqual(155);
+    expect(r.n).toBeGreaterThanOrEqual(165);
+    expect(r.n).toBeLessThanOrEqual(195);
+  });
+  it('smart с осторожными ответами: Грошево ≤ 165, Наваринка ≤ 200', () => {
+    const r = play(true);
+    expect(r.g).toBeLessThanOrEqual(165);
+    expect(r.n).toBeLessThanOrEqual(200);
+  });
+});

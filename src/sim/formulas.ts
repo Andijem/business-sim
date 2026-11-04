@@ -7,6 +7,7 @@ export function upgradeFx(p: Point): Required<UpgradeEffects> {
   const fx: Required<UpgradeEffects> = {
     capMult: 1, qualityAdd: 0, cogsMult: 1, summerCapMult: 1, freeStaff: 0,
     spoilMult: 1, priceMult: 1, flowMult: 1, rainFloor: 0, afterRainCap: Infinity,
+    offSeasonFlow: 1, stormFloor: 0,
   };
   for (const u of NICHES[p.niche].upgrades.slice(0, p.upgrades)) {
     const e = u.effects;
@@ -20,6 +21,8 @@ export function upgradeFx(p: Point): Required<UpgradeEffects> {
     if (e.flowMult) fx.flowMult *= e.flowMult;
     if (e.rainFloor) fx.rainFloor = Math.max(fx.rainFloor, e.rainFloor);
     if (e.afterRainCap) fx.afterRainCap = Math.min(fx.afterRainCap, e.afterRainCap);
+    if (e.offSeasonFlow) fx.offSeasonFlow *= e.offSeasonFlow;
+    if (e.stormFloor) fx.stormFloor = Math.max(fx.stormFloor, e.stormFloor);
   }
   return fx;
 }

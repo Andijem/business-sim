@@ -9,6 +9,9 @@ import { makeSmart } from '../sim/strategies';
 import { nextHint } from './tutorial';
 import { ASSIST_VILLAGES, assistOn, fxHtml as fxRaw, pointAction, tryAction } from './advice';
 import { log } from '../sim';
+import { ACHIEVEMENTS, BOOSTS, SPEED_MS, buyBoost, type BoostId } from '../meta/coins';
+import { getMeta, saveMetaNow } from '../meta/store';
+import { musicIsOn, soundOn, toggleMusic, toggleSound } from './sound';
 import './balance.css';
 
 const money = (x: number) => Math.round(x).toLocaleString('ru-RU');
@@ -54,7 +57,8 @@ export type Sheet =
   | { kind: 'money' }
   | { kind: 'manage' }
   | { kind: 'help' }
-  | { kind: 'away'; days: number; day0: number; cash0: number };
+  | { kind: 'shop' }
+  | { kind: 'away'; days: number; day0: number; cash0: number; max?: number };
 
 export interface BalanceScreen {
   open(sheet?: Sheet): void;
@@ -149,6 +153,7 @@ export function mountBalance(
         <div><b>${tk(`niche.${p.niche}`)}</b><small>${tk(`village.${p.village}`)}</small></div>
         <span class="stars">★ ${p.rep.toFixed(1)}</span></div>
       <div class="tags">${tags}</div>
+      ${p.closedDays > 0 ? `<div class="btns"><button class="ghost coin" data-a="boost" data-v="rebuild" data-id="${p.id}">${t('shop.rebuildBtn', { cost: BOOSTS.rebuild.cost })}</button></div>` : ''}
       <div class="stats">
         ${stat(t('ui.st.guests'), `${t('ui.st.guestsVal', { served: Math.round(L?.served ?? 0), demand: Math.round(L?.demand ?? 0) })}${lost > 0 ? `<em>${t('ui.st.lost', { lost })}</em>` : ''}`, lost > 0.08 * (L?.served ?? 0))}
         ${stat(t('ui.st.profit'), `${signed(L?.profit ?? 0)} <small>${t('ui.perDay')}</small>`, (L?.profit ?? 0) < 0)}
@@ -249,11 +254,16 @@ export function mountBalance(
         <small class="muted">${t('ui.money.taxText')}</small>
         <div class="btns"><button class="ghost" data-a="usn">${t('ui.usnSwitch', { usn: st.usn === 6 ? 15 : 6 })}</button></div>
       </div>
-      <h3>${t('ui.money.bank')}</h3><div class="panel">
+      <h3>🏦 ${t('bank.name')}</h3><div class="panel">
+        <small class="muted">${t('bank.tagline')}</small>
         ${loans}
         <div>${t('ui.money.overdraft', { limit: money(overdraftLimit(st)) })}</div>
         ${st.negDays > 0 ? `<div class="toast">${t('ui.money.negative', { days: st.negDays })}</div>` : ''}
         ${limit >= 10000 ? `<div class="btns"><button class="ghost" data-a="loan" data-v="${limit}">${t('ui.loanTake', { amount: money(limit) })}</button></div>` : ''}
+      </div>
+      <h3>${t('bank.products')}</h3><div class="panel bank">
+        ${['account', 'books', 'acquiring', 'credit'].map((k) => `<div class="prod"><b>${tk(`bank.${k}`)}</b><small>${tk(`bank.${k}.fx`)}</small></div>`).join('')}
+        <small class="muted">${t('bank.soon')}</small>
       </div>`;
   }
 
@@ -388,6 +398,36 @@ export function mountBalance(
       <div class="btns"><button data-a="close">${t('ui.sum.next')}</button></div>`;
   }
 
+  /** Монетки: ежедневный вход, ускорители, достижения. Оплаты в версии 0.1 нет. */
+  function shopHtml(st: GameState): string {
+    const m = getMeta();
+    const now = Date.now();
+    const until = (ms: number) => new Date(ms).toLocaleString('ru-RU', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const closed = st.companies[0].points.filter((p) => p.closedDays > 0);
+    const boost = (id: BoostId, active: string) => `<div class="boost"><div><b>${tk(`shop.${id}`)}</b><small>${tk(`shop.${id}.how`)}</small>
+        ${active ? `<small class="pos">${active}</small>` : ''}</div>
+        ${id === 'rebuild'
+          ? closed.length ? closed.map((p) => `<button class="coin" data-a="boost" data-v="rebuild" data-id="${p.id}">${tk(`niche.${p.niche}`)} · ${BOOSTS.rebuild.cost} 🪙</button>`).join('')
+            : `<small class="muted">${t('shop.rebuild.none')}</small>`
+          : `<button class="coin" data-a="boost" data-v="${id}">${BOOSTS[id].cost} 🪙</button>`}</div>`;
+    const ach = ACHIEVEMENTS.map((a) => {
+      const done = m.achieved.includes(a.id);
+      return `<div class="ach${done ? ' done' : ''}"><span>${done ? '✅' : '○'}</span><div><b>${tk(`ach.${a.id}`)}</b><small>${tk(`ach.${a.id}.how`)}</small></div><em>+${a.coins} 🪙</em></div>`;
+    }).join('');
+    return `<h3>${t('shop.title')}</h3><div class="panel">
+        <div class="big">🪙 ${m.coins}</div>
+        <small class="muted">${t('shop.rule')}</small>
+        <div>${t('shop.streak', { days: m.streak, next: 5 + Math.min(m.streak, 5) })}</div>
+        <div class="btns"><button class="ghost" data-a="buyCoins">${t('shop.buy')}</button></div>
+      </div>
+      <h3>${t('shop.boosts')}</h3><div class="panel">
+        ${boost('speed', now < m.speedUntil ? t('shop.activeUntil', { at: until(m.speedUntil) }) : '')}
+        ${boost('longOffline', now < m.longOfflineUntil ? t('shop.activeUntil', { at: until(m.longOfflineUntil) }) : '')}
+        ${boost('rebuild', '')}
+      </div>
+      <h3>${t('shop.ach')}</h3><div class="panel">${ach}</div>`;
+  }
+
   function sheetHtml(st: GameState): string {
     const me = st.companies[0];
     switch (sheet.kind) {
@@ -409,9 +449,10 @@ export function mountBalance(
       case 'cards': return cardsHtml(st);
       case 'summary': return summaryHtml(st);
       case 'money': return moneyTab(st);
+      case 'shop': return shopHtml(st);
       case 'manage': return manageTab(st);
       case 'away': {
-        const { days, day0, cash0 } = sheet;
+        const { days, day0, cash0, max } = sheet;
         const evs = st.events.filter((e) => e.day >= day0 && !['ev.cardNew', 'ev.tax'].includes(e.key));
         const auto = evs.filter((e) => e.key === 'ev.cardAuto' || e.key === 'ev.managerCard').length;
         const shown = evs.filter((e) => e.key !== 'ev.cardAuto').slice(-12).map((e) => `<div class="ev"><span>${e.day + 1}</span> ${eventText(e)}</div>`).join('');
@@ -420,11 +461,13 @@ export function mountBalance(
           <div>${t('ui.away.cash', { from: money(cash0), to: money(me.cash), delta: signed(me.cash - cash0) })}</div>
           ${auto ? `<small class="muted">${t('ui.away.cards', { n: auto })}</small>` : ''}</div>
           ${shown ? `<div class="panel">${shown}</div>` : ''}
-          <small class="muted">${t('ui.away.note', { max: OFFLINE_MAX_DAYS })}</small>
+          <small class="muted">${t('ui.away.note', { max: max ?? OFFLINE_MAX_DAYS })}</small>
           <div class="btns"><button data-a="close">${t('ui.sum.next')}</button></div>`;
       }
       case 'help': return `<h3>${t('tut.help')}</h3><div class="panel">${t('tut.scene.help')}</div><div class="panel">${t('tut.helpText')}</div>
-        <div class="btns"><button class="ghost" data-a="hints">${hints ? t('tut.hide') : t('tut.show')}</button></div>`;
+        <div class="btns"><button class="ghost" data-a="hints">${hints ? t('tut.hide') : t('tut.show')}</button>
+          <button class="ghost" data-a="sound">${soundOn() ? t('ui.soundOff') : t('ui.soundOn')}</button>
+          <button class="ghost" data-a="music">${musicIsOn() ? t('ui.musicOff') : t('ui.musicOn')}</button></div>`;
       default: return '';
     }
   }
@@ -534,6 +577,17 @@ export function mountBalance(
       case 'card': return act(resolveCard(st, id, v));
       case 'usn': return act(setUsn(st, st.usn === 6 ? 15 : 6));
       case 'loan': return act(takeLoan(st, Number(v)));
+      case 'boost': {
+        const r = buyBoost(getMeta(), v as BoostId, Date.now(), st, id);
+        if (r.ok) saveMetaNow();
+        toast = r.ok ? tk(`shop.${v}.done`, { min: SPEED_MS / 60000 }) : '';
+        if (!r.ok) return act(r);
+        onChange(st);
+        return render();
+      }
+      case 'sound': toggleSound(); return render();
+      case 'music': toggleMusic(); return render();
+      case 'buyCoins': toast = t('shop.noPay'); return render();
       case 'export':
       case 'import':
       case 'new':

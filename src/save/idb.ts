@@ -48,3 +48,16 @@ export async function loadGame(slot = 'main'): Promise<{ state: GameState; saved
 export async function deleteGame(slot = 'main'): Promise<void> {
   await tx('readwrite', (s) => s.delete(slot));
 }
+
+/** Монетки и достижения живут отдельно от партии: новая игра их не сбрасывает. */
+export async function saveMeta(m: unknown): Promise<void> {
+  await tx('readwrite', (s) => s.put(m, 'meta'));
+}
+
+export async function loadMeta(): Promise<unknown> {
+  try {
+    return await tx('readonly', (s) => s.get('meta'));
+  } catch {
+    return null;
+  }
+}

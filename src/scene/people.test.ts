@@ -37,7 +37,7 @@ describe('здания всех ниш', () => {
     const base = newGame(1).companies[0].points[0];
     for (const niche of Object.keys(NICHE_ICON)) {
       expect(hasKey(`niche.${niche}`), niche).toBe(true);
-      for (const u of NICHES[niche as keyof typeof NICHES].upgrades) expect(hasKey(`upgrade.${u.id}`), u.id).toBe(true);
+      for (const u of NICHES[niche as keyof typeof NICHES]?.upgrades ?? []) expect(hasKey(`upgrade.${u.id}`), u.id).toBe(true);
       for (const seg of [-1, 0, 1] as const) {
         expect(hasKey(`segName.${niche}.${seg}`), `${niche}.${seg}`).toBe(true);
         for (let hall = 0; hall < 4; hall++) {

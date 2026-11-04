@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { MATS } from './voxels';
 import type { LotView } from './lots';
-import { villageX } from './layout';
+import { slotOf, villageX } from './layout';
 
 const MAX = 160;
 const COLORS = [0x3b7fbf, 0xe8a84a, 0x7a5ea8, 0xd65a5a, 0x5a6a7a, 0x4f9a6a, 0xe2604a, 0x2b3340];
@@ -17,11 +17,11 @@ interface Agent {
 
 /** Где у участка вход и по какой линии тротуара к нему идти. */
 function routeTo(v: LotView, fromLeft: boolean): THREE.Vector3[] {
-  const s = v.lot.slot;
   const vx = villageX(v.lot.village);
   const c = v.center;
   const side = fromLeft ? -32 : 32;
-  const yard = s === 10 || s === 11 || s >= 14;
+  const f = slotOf(v.lot).face;
+  const yard = f === 'nx' || f === 'px';
   if (yard) {
     // дворы: по главному тротуару до боковой улицы, потом на север
     const lane = vx + (c.x > vx - 6 ? -3.75 : -8.25);

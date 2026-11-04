@@ -271,8 +271,109 @@ function rental(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
   for (let n = 0; n < p.staff; n++) person(b, vi(x1 - 1.25 - n * 0.75), vi(z1 + 1.5), acc);
 }
 
+/** Шаурма: ларёк с окном выдачи, вертел светится. */
+function shawarma(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z1, h, acc } = hallBox(p, b, r, f, { w: 3.5 + p.hall * 0.75, h: 2.75, floor: [0xd8d4cc, 0xc8c4bc], wall: [0xf2e2b0, 0xe6d49c], roof: 0xd96a2a, awning: 0xd96a2a });
+  b.fill(x0 + 0.5, 0.25, 1.5, x0 + 1, 1.75, 2, 0xb8602a, true); // вертел
+  b.fill(x0 + 1.5, 0.25, z1 - 1.5, x1 - 0.5, 1, z1 - 1, 0x8a8a8a);
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 1.5 + n * 0.75), vi(z1 - 2.25), acc);
+  for (let n = 0; n < Math.min(2, p.hall + 1); n++) b.fill(x1 - 1.5 - n * 1.5, 0, z1 + 0.5, x1 - 1 - n * 1.5, 1, z1 + 1, 0x40404a); // стоячие столики
+  sign(r, x0 + 0.25, x1 - 0.25, h + 0.25, z1 - 0.75, 0xf2c230);
+}
+
+/** Автоботы: бокс с подъёмником и шинами (шиномонтаж и автосервис). */
+function garage(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore, tires: boolean) {
+  const bays = Math.min(4, p.hall + 1);
+  const w = Math.min(7, bays * 1.75 + 0.5), x0 = (PLOT - w) / 2, z0 = 0.75, z1 = 5.5, h = 3;
+  const acc = OWNER[p.owner];
+  b.fill(x0, 0, z0, x0 + w, 0.25, PLOT - 0.25, 0x8a8a92);
+  b.fill(x0, 0.25, z0, x0 + w, h, z0 + 0.25, 0xcfccc4);
+  b.fill(x0, 0.25, z0, x0 + 0.25, h, z1, 0xcfccc4);
+  b.fill(x0 + w - 0.25, 0.25, z0, x0 + w, h, z1, 0xcfccc4);
+  const cars = [0x3b7fbf, 0xe9e2d6, 0xe2604a, 0x2b3340];
+  for (let n = 0; n < bays; n++) {
+    const cx = x0 + 0.5 + n * 1.75;
+    if (n < p.staff) {
+      b.fill(cx, tires ? 0.25 : 0.75, z0 + 1, cx + 1, (tires ? 0.75 : 1.25), z0 + 3.25, cars[n % 4]);
+      if (!tires) b.fill(cx + 0.25, 0.25, z0 + 1.5, cx + 0.5, 0.75, z0 + 2.75, 0xf2c230); // подъёмник
+    }
+    f.fill(cx - 0.25, h - 0.5, z1 - 0.25, cx + 1.25, h, z1, 0x40404a);
+  }
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 0.5 + n * 1.75), vi(z0 + 3.75), acc);
+  if (tires) for (let n = 0; n < 4; n++) b.fill(x0 + w - 1, 0.25 + n * 0.25, z1 + 0.25, x0 + w - 0.25, 0.5 + n * 0.25, z1 + 1, 0x2a2a2a);
+  r.fill(x0 - 0.25, h, z0 - 0.25, x0 + w + 0.25, h + 0.25, z1 + 0.25, 0x5f6a7a);
+  sign(r, x0 + 0.5, x0 + w - 0.5, h + 0.25, z1 - 0.75, acc);
+}
+const tyre = (p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) => garage(p, b, r, f, true);
+const carService = (p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) => garage(p, b, r, f, false);
+
+/** Столовая: длинные столы и раздача с подносами. */
+function canteen(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z0, z1, h, acc } = hallBox(p, b, r, f, { w: 5 + p.hall * 0.5, floor: [0xe8e4dc, 0xd8d4cc], roof: 0x7a8a6a });
+  b.fill(x0 + 0.5, 0.25, z0 + 0.5, x1 - 0.5, 1, z0 + 1, 0xb8b8c0);
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 1 + n * 0.75), vi(z0 + 0.25), acc);
+  for (let row = 0; row <= Math.min(2, p.hall); row++) b.fill(x0 + 0.75, 0.25, z0 + 2 + row * 1, x1 - 0.75, 0.75, z0 + 2.5 + row * 1, WOOD);
+  sign(r, x0 + 0.5, x1 - 0.5, h + 0.25, z1 - 0.75, 0xfaf2e6);
+}
+
+/** Прачечная: ряд стиральных машин с круглыми окошками. */
+function laundry(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z0, z1, h, acc } = hallBox(p, b, r, f, { w: 4.5 + p.hall * 0.75, floor: [0xdfe6ea, 0xcfd8de], wall: [0xeef4f6, 0xdfe8ec], roof: 0x5fa8c8, awning: 0x5fa8c8 });
+  for (let x = x0 + 0.5; x < x1 - 0.75; x += 1) {
+    b.fill(x, 0.25, z0 + 0.5, x + 0.75, 1.25, z0 + 1.25, 0xf4f4f4);
+    b.fill(x + 0.25, 0.5, z0 + 1.25, x + 0.5, 1, z0 + 1.5, 0x5fa8c8, true);
+  }
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 1 + n * 0.75), vi(z1 - 1.5), acc);
+  sign(r, x0 + 0.5, x1 - 0.5, h + 0.25, z1 - 0.75, 0xfaf2e6);
+}
+
+/** Курьеры: офис-склад с коробками и самокатами у входа. */
+function couriers(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z0, z1, acc } = hallBox(p, b, r, f, { w: 4 + p.hall * 0.5, floor: [0xd8d4cc, 0xc8c4bc], wall: [0xe8dcc8, 0xd8ccb8], roof: 0x8a8a92 });
+  for (let n = 0; n < 6; n++) b.fill(x0 + 0.5 + (n % 3) * 0.75, 0.25 + Math.floor(n / 3) * 0.5, z0 + 0.5, x0 + 1 + (n % 3) * 0.75, 0.75 + Math.floor(n / 3) * 0.5, z0 + 1.25, 0xc9a27a);
+  for (let n = 0; n < p.staff; n++) {
+    const x = 0.5 + n * 0.75;
+    if (x > PLOT - 0.75) break;
+    b.fill(x, 0.25, z1 + 0.75, x + 0.25, 0.5, z1 + 1.5, 0x2a2a2a);
+    b.fill(x, 0.5, z1 + 0.75, x + 0.25, 1.25, z1 + 1, acc);
+    person(b, vi(x + 0.25), vi(z1 + 1.75), acc);
+  }
+  if (x1 - x0 > 5) b.fill(x1 - 2, 0.25, z0 + 1, x1 - 0.5, 1.25, z0 + 3, 0xfaf2e6); // фургон
+}
+
+/** Агентство нянь: домик с игровой площадкой. */
+function nannies(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z1, acc } = hallBox(p, b, r, f, { w: 4 + p.hall * 0.5, z1: 4.5, floor: [0xf2d8c8, 0xe8ccb8], wall: [0xfbe8d8, 0xf2dcc8], roof: 0xe8a0a0, pitched: true });
+  b.fill(0.5, 0, z1 + 0.25, PLOT - 0.5, 0.25, PLOT - 0.25, 0x9cc46a);
+  b.fill(x0 + 0.5, 0.25, z1 + 0.75, x0 + 1.75, 0.5, z1 + 2, 0xe8c870); // песочница
+  b.fill(x1 - 1.5, 0.25, z1 + 0.75, x1 - 1.25, 1.5, z1 + 1, 0x3b7fbf); // горка
+  b.fill(x1 - 1.5, 1.25, z1 + 0.75, x1 - 0.5, 1.5, z1 + 1.75, 0xe2604a);
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 2 + n * 0.75), vi(z1 + 1.5), acc);
+}
+
+/** Салон красоты: розовая витрина и кресла с зеркалами. */
+function beauty(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z0, z1, h, acc } = hallBox(p, b, r, f, { w: 4.5 + p.hall * 0.5, floor: [0xf4ece4, 0xe8dcd4], wall: [0xf6dce4, 0xecd0d8], roof: 0xc87a9a, awning: 0xc87a9a });
+  for (let x = x0 + 0.5, n = 0; x < x1 - 0.75; x += 1.25, n++) {
+    b.fill(x, 1, z0 + 0.25, x + 0.75, 2, z0 + 0.5, 0xbfe0ee, true);
+    b.fill(x, 0.25, z0 + 1, x + 0.75, 0.75, z0 + 1.75, 0x40404a);
+    if (n < p.staff) person(b, vi(x + 0.25), vi(z0 + 2), acc);
+  }
+  sign(r, x0 + 0.5, x1 - 0.5, h + 0.25, z1 - 0.75, 0xfaf2e6);
+}
+
+/** Ремонт техники: тесная мастерская с паяльными столами. */
+function techRepair(p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) {
+  const { x0, x1, z0, z1, h, acc } = hallBox(p, b, r, f, { w: 3.5 + p.hall * 0.75, floor: [0xd8d4cc, 0xc8c4bc], wall: [0xdcdce4, 0xcfcfd8], roof: 0x4a5a7a });
+  b.fill(x0 + 0.5, 0.25, z0 + 0.75, x1 - 0.5, 1, z0 + 1.5, 0x6b6b74);
+  for (let x = x0 + 0.75; x < x1 - 0.75; x += 1) b.fill(x, 1, z0 + 1, x + 0.5, 1.25, z0 + 1.25, 0x2b3340);
+  for (let n = 0; n < p.staff; n++) person(b, vi(x0 + 1 + n * 0.75), vi(z0 + 2), acc);
+  sign(r, x0 + 0.25, x1 - 0.25, h + 0.25, z1 - 0.75, 0x5fa8c8);
+}
+
 const BUILDERS: Record<string, (p: Point, b: VoxelStore, r: VoxelStore, f: VoxelStore) => void> = {
   coffee, store, wash, farm, bakery, guesthouse, resortCafe, fish, rental,
+  shawarma, tyre, carService, canteen, laundry, couriers, nannies, beauty, techRepair,
 };
 
 /** Собирает здание точки (или пустой участок) в локальных координатах участка, фасадом на +z. */

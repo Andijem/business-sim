@@ -75,6 +75,8 @@ export interface VillageDef {
   summerMix?: number[];
   /** Точки Хваткина появляются, когда деревня открывается (деревни после v0.1). */
   lateRival?: boolean;
+  /** Район Капитальска: городская раскладка, мост перед первым районом. */
+  city?: boolean;
 }
 
 export const NICHES = nichesJson as Record<NicheId, NicheDef>;

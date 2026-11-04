@@ -12,6 +12,10 @@ export interface Slot {
 export const PLOT = 7;
 /** Расстояние между деревнями по главной дороге. */
 export const VILLAGE_GAP = 80;
+/** Районы города шире: до 30 участков вдоль проспекта и во дворах. */
+export const DISTRICT_GAP = 120;
+/** Перед первым районом — река и мост. */
+export const RIVER_GAP = 40;
 
 /**
  * Шаблон участков одной деревни, от лучших к худшим.
@@ -41,6 +45,24 @@ const CLASS: Record<string, number[]> = { '1.25': [0, 1, 2, 3], '1': [4, 5, 6, 7
 /** Если места своего класса кончились, берём следующее свободное в порядке шаблона. */
 const ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15];
 
+/** Район города: деревенский шаблон плюс ещё 12 мест вдоль проспекта и 2 дальних двора (всего 30). */
+const CITY: Slot[] = [
+  ...TEMPLATE,
+  ...[31, -33.5, 39.5, -42, 48, -50.5].flatMap((x0): Slot[] => [{ x0, z0: -7.5, face: 'pz' }, { x0, z0: 6.5, face: 'nz' }]),
+  { x0: -3, z0: -33, face: 'nx' },
+  { x0: -16, z0: -33, face: 'px' },
+];
+const CITY_CLASS: Record<string, number[]> = {
+  '1.25': [0, 1, 2, 3, 4, 5, 16, 17],
+  '1': [6, 7, 8, 9, 12, 13, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27],
+  '0.8': [10, 11, 14, 15, 28, 29],
+};
+const CITY_ORDER = [...CITY_CLASS['1.25'], ...CITY_CLASS['1'], ...CITY_CLASS['0.8']];
+
+const isCity = (id: string) => !!VILLAGES.find((v) => v.id === id)?.city;
+/** Шаблон места: деревня или район города. */
+export const templateOf = (id: string): Slot[] => (isCity(id) ? CITY : TEMPLATE);
+
 export interface Lot {
   village: string;
   niche: NicheId;
@@ -51,8 +73,26 @@ export interface Lot {
   point: Point | null;
 }
 
-/** Смещение деревни по x: деревни стоят вдоль одной дороги. */
-export const villageX = (id: string) => VILLAGES.findIndex((v) => v.id === id) * VILLAGE_GAP;
+/** Смещение деревни по x: деревни, а за рекой районы города стоят вдоль одной дороги. */
+export function villageX(id: string): number {
+  let x = 0;
+  for (let i = 0; i < VILLAGES.length; i++) {
+    const V = VILLAGES[i];
+    if (i > 0) {
+      const prev = VILLAGES[i - 1];
+      x += !V.city ? VILLAGE_GAP : prev.city ? DISTRICT_GAP : VILLAGE_GAP / 2 + RIVER_GAP + DISTRICT_GAP / 2;
+    }
+    if (V.id === id) return x;
+  }
+  return -1;
+}
+
+/** Где течёт река: x её середины или null, если города ещё нет. */
+export function riverX(): number | null {
+  const i = VILLAGES.findIndex((v) => v.city);
+  if (i <= 0) return null;
+  return villageX(VILLAGES[i - 1].id) + VILLAGE_GAP / 2 + RIVER_GAP / 2;
+}
 
 /** Участки деревни: каждому лоту из данных — место в шаблоне по его проходимости. */
 export function villageLots(id: string): Omit<Lot, 'point'>[] {
@@ -63,10 +103,11 @@ export function villageLots(id: string): Omit<Lot, 'point'>[] {
   // Сначала бойкие места, внутри — по порядку ниш: так кофейни и магазины перемешаны у перекрёстка.
   all.sort((a, b) => b.traffic - a.traffic);
   const taken = new Set<number>();
+  const [classes, order] = isCity(id) ? [CITY_CLASS, CITY_ORDER] : [CLASS, ORDER];
   for (const l of all) {
-    const pool = CLASS[String(l.traffic)] ?? CLASS['1'];
-    const slot = pool.find((s) => !taken.has(s)) ?? ORDER.find((s) => !taken.has(s));
-    if (slot == null) throw new Error(`в деревне ${id} больше ${TEMPLATE.length} участков`);
+    const pool = classes[String(l.traffic)] ?? classes['1'];
+    const slot = pool.find((s) => !taken.has(s)) ?? order.find((s) => !taken.has(s));
+    if (slot == null) throw new Error(`в месте ${id} больше ${order.length} участков`);
     taken.add(slot);
     out.push({ village: id, niche: l.niche, traffic: l.traffic, slot });
   }
@@ -88,9 +129,7 @@ export function lotsOf(st: GameState, village: string): Lot[] {
   return lots;
 }
 
-export const slotOf = (l: { slot: number }) => TEMPLATE[l.slot];
-/** Все места шаблона: незанятые лотами заполняются домами и садами. */
-export const TEMPLATE_SLOTS = TEMPLATE;
+export const slotOf = (l: { village: string; slot: number }) => templateOf(l.village)[l.slot];
 
 /** Центр участка в мировых координатах (с учётом смещения деревни). */
 export function lotCenter(l: { village: string; slot: number }): [number, number] {

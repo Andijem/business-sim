@@ -30,12 +30,14 @@ describe('гости на улице', () => {
 import { buildLot } from './buildings';
 import { NICHE_ICON } from '../ui/icons';
 import { hasKey } from '../i18n';
+import { NICHES } from '../sim';
 import type { Point } from '../sim';
 describe('здания всех ниш', () => {
   it('строятся на любом уровне зала и формате, у ниши есть значок и названия', () => {
     const base = newGame(1).companies[0].points[0];
     for (const niche of Object.keys(NICHE_ICON)) {
       expect(hasKey(`niche.${niche}`), niche).toBe(true);
+      for (const u of NICHES[niche as keyof typeof NICHES].upgrades) expect(hasKey(`upgrade.${u.id}`), u.id).toBe(true);
       for (const seg of [-1, 0, 1] as const) {
         expect(hasKey(`segName.${niche}.${seg}`), `${niche}.${seg}`).toBe(true);
         for (let hall = 0; hall < 4; hall++) {

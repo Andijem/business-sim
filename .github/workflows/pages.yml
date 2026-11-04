@@ -1,7 +1,6 @@
 name: Сайт (GitHub Pages)
+# Сайт пока выключен (FAJI 04.11: играем через game.html). Запуск только вручную.
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read

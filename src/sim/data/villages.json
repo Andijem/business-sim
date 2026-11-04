@@ -1,31 +1,33 @@
 {
   "marketK": 1.0,
-  "trafficRent": { "1.25": 1.3, "1": 1.0, "0.8": 0.7 },
+  "trafficRent": {"1.25": 1.3, "1": 1.0, "0.8": 0.7},
   "villages": [
-    { "id": "kopeechkino", "rent": 1.0,
-      "market": { "coffee": 420, "store": 750 },
-      "lots": { "store": 3, "coffee": 4 },
-      "traffic": { "coffee": [1.25, 1.25, 1.0, 0.8], "store": [1.25, 1.0, 0.8] },
-      "unlocks": "barysh" },
-    { "id": "barysh", "rent": 1.15,
-      "market": { "coffee": 300, "store": 570, "wash": 150 },
-      "lots": { "wash": 4, "store": 3, "coffee": 3 },
-      "traffic": { "wash": [1.25, 1.0, 1.0, 0.8], "store": [1.25, 1.25, 1.0], "coffee": [1.25, 1.0, 0.8] },
-      "unlocks": null }
+    {"id": "kopeechkino", "rent": 1.0, "market": {"coffee": 420, "store": 750}, "lots": {"store": 3, "coffee": 4}, "traffic": {"coffee": [1.25, 1.25, 1.0, 0.8], "store": [1.25, 1.0, 0.8]}, "unlocks": "barysh"},
+    {"id": "barysh", "rent": 1.15, "market": {"coffee": 300, "store": 570, "wash": 150}, "lots": {"wash": 4, "store": 3, "coffee": 3}, "traffic": {"wash": [1.25, 1.0, 1.0, 0.8], "store": [1.25, 1.25, 1.0], "coffee": [1.25, 1.0, 0.8]}, "unlocks": "grosh"},
+    {"id": "grosh", "rent": 0.9, "market": {"farm": 440, "bakery": 400, "store": 380}, "lots": {"farm": 5, "bakery": 3, "store": 3}, "traffic": {"farm": [1.25, 1.25, 1.0, 1.0, 0.8], "bakery": [1.25, 1.0, 0.8], "store": [1.25, 1.0, 0.8]}, "unlocks": "navarinka", "lateRival": true},
+    {"id": "navarinka", "rent": 1.2, "market": {"guesthouse": 65, "resortCafe": 280, "fish": 200, "rental": 40}, "lots": {"guesthouse": 4, "resortCafe": 3, "fish": 3, "rental": 3}, "traffic": {"guesthouse": [1.25, 1.25, 1.0, 0.8], "resortCafe": [1.25, 1.0, 0.8], "fish": [1.25, 1.0, 0.8], "rental": [1.25, 1.0, 0.8]}, "summerMix": [0.35, 0.45, 0.2], "unlocks": null, "lateRival": true}
   ],
   "start": {
     "playerCash": 40000,
     "rivalCash": 150000,
     "rivalSkill": 50,
-    "player": { "niche": "coffee", "village": "kopeechkino" },
+    "player": {"niche": "coffee", "village": "kopeechkino"},
     "rival": [
-      { "niche": "coffee", "village": "kopeechkino", "priceIdx": 0.95, "rep": 3.2 },
-      { "niche": "coffee", "village": "kopeechkino", "priceIdx": 1.0, "rep": 3.0 },
-      { "niche": "store", "village": "kopeechkino", "staff": 2, "rep": 3.2 },
-      { "niche": "coffee", "village": "barysh", "priceIdx": 0.95 },
-      { "niche": "store", "village": "barysh", "staff": 2 },
-      { "niche": "store", "village": "barysh", "staff": 1, "rep": 3.0 },
-      { "niche": "wash", "village": "barysh", "staff": 2, "rep": 3.1 }
+      {"niche": "coffee", "village": "kopeechkino", "priceIdx": 0.95, "rep": 3.2},
+      {"niche": "coffee", "village": "kopeechkino", "priceIdx": 1.0, "rep": 3.0},
+      {"niche": "store", "village": "kopeechkino", "staff": 2, "rep": 3.2},
+      {"niche": "coffee", "village": "barysh", "priceIdx": 0.95},
+      {"niche": "store", "village": "barysh", "staff": 2},
+      {"niche": "store", "village": "barysh", "staff": 1, "rep": 3.0},
+      {"niche": "wash", "village": "barysh", "staff": 2, "rep": 3.1},
+      {"niche": "farm", "village": "grosh", "staff": 2, "rep": 3.2},
+      {"niche": "farm", "village": "grosh", "priceIdx": 0.95},
+      {"niche": "farm", "village": "grosh", "rep": 3.1},
+      {"niche": "bakery", "village": "grosh", "rep": 3.1},
+      {"niche": "guesthouse", "village": "navarinka", "staff": 2, "rep": 3.2},
+      {"niche": "guesthouse", "village": "navarinka", "rep": 3.0},
+      {"niche": "resortCafe", "village": "navarinka", "staff": 2},
+      {"niche": "fish", "village": "navarinka", "rep": 3.1}
     ]
   }
 }

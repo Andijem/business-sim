@@ -8,6 +8,7 @@ import { People } from './scene/people';
 import { slotOf, villageX } from './scene/layout';
 import { mountBalance } from './ui/balance';
 import { mountPlay } from './ui/play';
+import { NICHE_ICON } from './ui/icons';
 import { t, tk } from './i18n';
 import { OFFLINE_MAX_DAYS, catchUp, endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
 import { checkAchievements, dailyLogin, offlineMax, timeMult } from './meta/coins';
@@ -226,7 +227,7 @@ function syncPins() {
     }
     const p = v.lot.point;
     const locked = !state.unlocked.includes(v.lot.village);
-    const icon = { coffee: '☕', store: '🛒', wash: '🚗' }[v.lot.niche];
+    const icon = NICHE_ICON[v.lot.niche] ?? '🏠';
     b.hidden = locked && !p;
     b.className = !p ? 'free' : p.owner === 0 ? 'mine' : p.forSale ? 'sale' : 'rival';
     b.innerHTML = !p
@@ -450,4 +451,6 @@ document.addEventListener('visibilitychange', () => {
 });
 requestAnimationFrame(frame);
 // для автопроверок: поставить час и посмотреть состояние
-Object.assign(window, { __ready: true, __temka: { setHour: (h: number) => { hour = h; requestRender(); }, state: () => state, closeSheet: () => balance.close(), away: (sec: number) => awayFor(sec) } });
+Object.assign(window, { __ready: true, __temka: { setHour: (h: number) => { hour = h; requestRender(); }, state: () => state, closeSheet: () => balance.close(), away: (sec: number) => awayFor(sec),
+  load: (code: string) => { const st = importCode(code); if (st) { state = st; persist(state); homeView(); } return !!st; },
+  fly: (id: string) => host.focusVillage(id) } });

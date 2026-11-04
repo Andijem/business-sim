@@ -11,7 +11,11 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #bfe0ee;
 .play .chip small { display: block; font-size: 10px; font-weight: 500; color: #8a7d76; }
 .play .chip em { display: block; font-style: normal; font-size: 10.5px; font-weight: 600; color: #2f7a4e; }
 .play .chip em.neg, .play .pt em.neg { color: #b23c28; }
-.play .vtabs { position: absolute; top: calc(66px + env(safe-area-inset-top, 0)); left: 0; right: 0; display: flex; justify-content: center; gap: 6px; }
+.play .vtabs { position: absolute; top: calc(66px + env(safe-area-inset-top, 0)); left: 0; right: 0; display: flex; gap: 6px; padding: 0 10px; overflow-x: auto; scrollbar-width: none; pointer-events: auto; touch-action: pan-x; }
+.play .vtabs::-webkit-scrollbar { display: none; }
+.play .vtabs button { flex: 0 0 auto; }
+.play .vtabs button:first-child { margin-left: auto; }
+.play .vtabs button:last-child { margin-right: auto; }
 .play .vtabs button { background: rgba(255,250,244,.8); border-radius: 12px; padding: 5px 10px; font-size: 12px; }
 .play .vtabs button.on { background: #2f6f62; color: #fff; }
 .play .side { position: absolute; right: 10px; bottom: calc(118px + env(safe-area-inset-bottom, 0)); display: flex; flex-direction: column; gap: 8px; }

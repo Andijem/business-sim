@@ -127,6 +127,8 @@ export interface GameOptions {
   finance: boolean;
   /** Хваткин закрывает точку, если её не выкупили за 7 дней продажи. */
   rivalCloses: boolean;
+  /** Сколько деревень в игре (по порядку открытия); не задано — все. Для сверки с моделью v0.1 — 2. */
+  villages?: number;
 }
 
 export interface GameState {

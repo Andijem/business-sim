@@ -9,7 +9,7 @@ import './play.css';
 
 const money = (x: number) => Math.round(x).toLocaleString('ru-RU');
 const signed = (x: number) => (x >= 0 ? '+' : '−') + money(Math.abs(x));
-const ICON: Record<string, string> = { coffee: '☕', store: '🛒', wash: '🚗' };
+import { NICHE_ICON as ICON } from './icons';
 
 /** Что экран просит у сцены и часов. */
 export interface PlayHost {

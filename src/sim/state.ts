@@ -95,17 +95,29 @@ export function newGame(seed: number, options: Partial<GameOptions> = {}, player
     cardCooldown: {},
     options: { ...DEFAULT_OPTIONS, ...options },
   };
-  const [player, rival] = st.companies;
+  const [player] = st.companies;
   const first = makePoint(st, START.player.niche as NicheId, START.player.village, 0, playerInit);
   first.newDays = ECO.novelty.days;
   player.points.push(first);
+  for (const V of VILLAGES) if (!V.lateRival) spawnRivals(st, V.id);
+  first.traffic = 1.0;
+  return st;
+}
+
+/**
+ * Точки Хваткина в деревне. Деревни v0.1 заселены с первого дня (как в модели баланса),
+ * деревни с lateRival — в день, когда открываются: до этого их не видно и они не тратят случайные числа.
+ */
+export function spawnRivals(st: GameState, v: VillageId) {
+  const rival = st.companies[1];
+  const fresh: Point[] = [];
   for (const r of START.rival) {
+    if (r.village !== v) continue;
     const p = makePoint(st, r.niche as NicheId, r.village, 1, { ...r, seg: -1 });
     p.skill = START.rivalSkill;
     rival.points.push(p);
+    fresh.push(p);
   }
   // Хваткин занимает лучшие участки, стартовый киоск игрока стоит на обычной улице.
-  for (const p of rival.points) p.traffic = takeLot(st, p.village, p.niche);
-  first.traffic = 1.0;
-  return st;
+  for (const p of fresh) p.traffic = takeLot(st, p.village, p.niche);
 }

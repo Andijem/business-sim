@@ -16,7 +16,8 @@ export const VILLAGE_GAP = 80;
 /**
  * Шаблон участков одной деревни, от лучших к худшим.
  * Главная дорога идёт вдоль x (z от 1 до 5), боковая — вдоль z (x от −8 до −4) на север.
- * Первые 4 — у перекрёстка (бойкие), следующие 6 — вдоль улицы, последние 2 — во дворах.
+ * Первые 4 — у перекрёстка (бойкие), следующие 6 — вдоль улицы, 2 — во дворах,
+ * дальше ещё 2 на краю улицы и 2 в дальних дворах (для деревень больше 12 участков).
  */
 const TEMPLATE: Slot[] = [
   { x0: -3, z0: -7.5, face: 'pz' },
@@ -31,8 +32,14 @@ const TEMPLATE: Slot[] = [
   { x0: -25, z0: 6.5, face: 'nz' },
   { x0: -3, z0: -16, face: 'nx' },
   { x0: -16, z0: -16, face: 'px' },
+  { x0: 22.5, z0: -7.5, face: 'pz' },
+  { x0: 22.5, z0: 6.5, face: 'nz' },
+  { x0: -3, z0: -24.5, face: 'nx' },
+  { x0: -16, z0: -24.5, face: 'px' },
 ];
-const CLASS: Record<string, number[]> = { '1.25': [0, 1, 2, 3], '1': [4, 5, 6, 7, 8, 9], '0.8': [10, 11] };
+const CLASS: Record<string, number[]> = { '1.25': [0, 1, 2, 3], '1': [4, 5, 6, 7, 8, 9, 12, 13], '0.8': [10, 11, 14, 15] };
+/** Если места своего класса кончились, берём следующее свободное в порядке шаблона. */
+const ORDER = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 10, 11, 14, 15];
 
 export interface Lot {
   village: string;
@@ -50,18 +57,18 @@ export const villageX = (id: string) => VILLAGES.findIndex((v) => v.id === id) *
 /** Участки деревни: каждому лоту из данных — место в шаблоне по его проходимости. */
 export function villageLots(id: string): Omit<Lot, 'point'>[] {
   const V = VILLAGES.find((v) => v.id === id)!;
-  const used: Record<string, number> = {};
   const out: Omit<Lot, 'point'>[] = [];
   const all = (Object.keys(V.lots) as NicheId[]).flatMap((n) =>
     (V.traffic[n] ?? Array(V.lots[n]).fill(1)).map((tr) => ({ niche: n, traffic: tr })));
   // Сначала бойкие места, внутри — по порядку ниш: так кофейни и магазины перемешаны у перекрёстка.
   all.sort((a, b) => b.traffic - a.traffic);
+  const taken = new Set<number>();
   for (const l of all) {
-    const key = String(l.traffic);
-    const pool = CLASS[key] ?? CLASS['1'];
-    const i = used[key] ?? 0;
-    used[key] = i + 1;
-    out.push({ village: id, niche: l.niche, traffic: l.traffic, slot: pool[Math.min(i, pool.length - 1)] });
+    const pool = CLASS[String(l.traffic)] ?? CLASS['1'];
+    const slot = pool.find((s) => !taken.has(s)) ?? ORDER.find((s) => !taken.has(s));
+    if (slot == null) throw new Error(`в деревне ${id} больше ${TEMPLATE.length} участков`);
+    taken.add(slot);
+    out.push({ village: id, niche: l.niche, traffic: l.traffic, slot });
   }
   return out;
 }

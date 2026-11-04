@@ -10,7 +10,8 @@
     "phone": "vite build && vite preview --host",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "certs": "node scripts/certs.mjs"
+    "certs": "node scripts/certs.mjs",
+    "html": "vite build --mode single && node scripts/rename-single.mjs"
   },
   "dependencies": {
     "three": "^0.170.0"
@@ -22,6 +23,7 @@
     "typescript": "^5.6.3",
     "vite": "^5.4.11",
     "vite-plugin-pwa": "^0.21.1",
+    "vite-plugin-singlefile": "^2.0.3",
     "vitest": "^2.1.8"
   }
 }

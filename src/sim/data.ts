@@ -75,9 +75,22 @@ export interface VillageDef {
   summerMix?: number[];
   /** Точки Хваткина появляются, когда деревня открывается (деревни после v0.1). */
   lateRival?: boolean;
-  /** Район Капитальска: городская раскладка, мост перед первым районом. */
+  /** Район Капитальска: городская раскладка сцены, мост перед первым районом. */
   city?: boolean;
+  /** Доли спроса эконом/средний/премиум круглый год (район города); иначе общие деревенские. */
+  mix?: number[];
+  /** Поток района по сезонам (Студгородок пустеет летом). */
+  seasonFlow?: number[];
+  /** «Всё схвачено»: доля участков каждой ниши, навык, звёзды, персонал и зал его точек. */
+  rival?: { share: number; skill: number; rep: number; staff: number; hall: number };
+  /** Во сколько раз дороже открытие, зал и прокачки (город). */
+  costMult?: number;
+  /** Свои правила выкупа (город): доли цены открытия и дни прибыли. */
+  buyout?: { openShare?: number; forSaleShare?: number; profitDays?: number };
 }
+/** Доли спроса по сегментам в деревне или районе в этот сезон. */
+export const mixOf = (V: VillageDef, season: number): number[] =>
+  (season === 1 && V.summerMix) || V.mix || VILLAGE_MIX;
 
 export const NICHES = nichesJson as Record<NicheId, NicheDef>;
 export const NICHE_IDS = Object.keys(NICHES) as NicheId[];

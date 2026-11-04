@@ -1,4 +1,4 @@
-import { ECO, MARKET_K, NICHES, VILLAGES, VILLAGE_MIX, seg, trafficRent } from './data';
+import { ECO, MARKET_K, NICHES, VILLAGES, mixOf, seg, trafficRent } from './data';
 import { attractiveness, effPriceIdx, modAdd, modMult, quality, service, unitPrice, upgradeFx } from './formulas';
 import { next } from './rng';
 import type { GameState, NicheId, Point } from './types';
@@ -51,7 +51,7 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         p.closedDays -= 1;
       }
       if (!open.length) continue;
-      let mult = N.season[season] * N.weekday[wd];
+      let mult = N.season[season] * N.weekday[wd] * (V.seasonFlow ? V.seasonFlow[season] : 1);
       const weather = niche === 'wash' ? (rain ? 0.45 : afterRain ? 1.6 : 1.0) : 1.0;
       if (niche === 'wash') mult *= weather;
       // Погода у курорта и рыбы: дождь, сухо, шторм (дождь осенью и зимой).
@@ -61,7 +61,7 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
       for (const p of open) qs.set(p, quality(p, st.companies[p.owner]));
       for (const p of open) A.set(p, attractiveness(p, st.companies[p.owner], qs.get(p)!));
       const dem = new Map<Point, number>(open.map((p) => [p, 0]));
-      const mix = (season === 1 && V.summerMix) || VILLAGE_MIX;
+      const mix = mixOf(V, season);
       mix.forEach((share, si) => {
         const As = new Map<Point, number>(open.map((p) => [p, A.get(p)! * seg(p.seg).reach[si]]));
         let tot = N.outside;

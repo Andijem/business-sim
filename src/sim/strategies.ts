@@ -35,7 +35,8 @@ export function chooseSeg(st: GameState, v: VillageId, niche: NicheId, s: Seg | 
   for (const c of [-1, 0, 1] as Seg[]) {
     const S = SEGS[c + 1];
     let reach = 0;
-    for (let i = 0; i < 3; i++) reach += (VILLAGE_MIX[i] * S.reach[i]) / (1 + crowd[i]);
+    const mix = village(v).mix ?? VILLAGE_MIX;
+    for (let i = 0; i < 3; i++) reach += (mix[i] * S.reach[i]) / (1 + crowd[i]);
     const score = (reach * S.price) / S.open ** 0.5;
     if (score > bestScore) {
       bestScore = score;
@@ -93,7 +94,7 @@ export function makeSmart(cfg: SmartCfg = {}): Act {
     for (const V of order) {
       for (const niche of Object.keys(village(V.id).lots) as NicheId[]) {
         const s = chooseSeg(st, V.id, niche, sg);
-        const cost = openPrice(niche, s);
+        const cost = openPrice(niche, s, V.id);
         const mine = me.points.filter((p) => p.village === V.id && p.niche === niche).length;
         const theirs = rival(st).points.filter((p) => p.village === V.id && p.niche === niche && !p.forSale).length;
         if (freeLot(st, V.id, niche) && mine <= theirs) {

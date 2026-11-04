@@ -1,4 +1,4 @@
-import { DEPTS, ECO, START, VILLAGES, village } from './data';
+import { DEPTS, ECO, NICHES, START, VILLAGES, village } from './data';
 import { makeRng } from './rng';
 import type { Company, GameOptions, GameState, NicheId, Owner, Point, Raw, Seg, VillageId } from './types';
 
@@ -117,6 +117,21 @@ export function spawnRivals(st: GameState, v: VillageId) {
     p.skill = START.rivalSkill;
     rival.points.push(p);
     fresh.push(p);
+  }
+  // Район города: «Всё схвачено» держит долю участков каждой ниши во всех трёх сегментах.
+  const R = village(v).rival;
+  if (R) {
+    for (const [niche, lots] of Object.entries(village(v).lots) as [NicheId, number][]) {
+      const n = Math.max(1, Math.round(lots * R.share));
+      for (let i = 0; i < n; i++) {
+        const s = ([0, -1, 1] as Seg[])[i % 3];
+        const p = makePoint(st, niche, v, 1, { seg: s, rep: R.rep, staff: Math.min(R.staff, NICHES[niche].slots[R.hall]) });
+        p.skill = R.skill;
+        p.hall = R.hall;
+        rival.points.push(p);
+        fresh.push(p);
+      }
+    }
   }
   // Хваткин занимает лучшие участки, стартовый киоск игрока стоит на обычной улице.
   for (const p of fresh) p.traffic = takeLot(st, p.village, p.niche);

@@ -102,3 +102,38 @@ describe('v0.2: Грошево и Наваринка', () => {
     expect(r.n).toBeLessThanOrEqual(200);
   });
 });
+
+describe('v0.3: кольцо 1 Капитальска', () => {
+  const DAYS = 380;
+  const CITY_SEEDS = 12;
+  const play = (cautious: boolean) => {
+    const a: number[] = [], z: number[] = [];
+    for (let seed = 0; seed < CITY_SEEDS; seed++) {
+      const s = STRATEGIES.smart;
+      const st = newGame(seed, { cards: cautious }, s.first ?? {});
+      for (let d = 0; d < DAYS && !st.bankrupt; d++) {
+        endDay(st);
+        for (const pc of [...st.pending]) {
+          const c = cardDef(pc.card);
+          resolveCard(st, pc.uid, (c.options.find((o) => o.cautious) ?? c.options[0]).id);
+        }
+        s.act(st);
+        finishDay(st);
+      }
+      expect(st.bankrupt).toBe(false);
+      a.push(st.captured.novostroyki ?? 999);
+      z.push(st.captured.studgorodok ?? 999);
+    }
+    return { first: median(a), last: median(z) };
+  };
+  it('smart без карточек: Новостройки около 248-го дня, Студгородок около 349-го', () => {
+    const r = play(false);
+    expect(r.first).toBeGreaterThanOrEqual(225);
+    expect(r.first).toBeLessThanOrEqual(270);
+    expect(r.last).toBeGreaterThanOrEqual(320);
+    expect(r.last).toBeLessThanOrEqual(375);
+  }, 120_000);
+  it('smart с осторожными ответами: Студгородок ≤ 390', () => {
+    expect(play(true).last).toBeLessThanOrEqual(390);
+  }, 120_000);
+});

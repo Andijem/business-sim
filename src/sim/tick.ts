@@ -1,6 +1,7 @@
 import { log, player, rival } from './actions';
 import { drawCards, expireCards, runScheduled } from './cards';
-import { DEPTS, ECO, VILLAGES } from './data';
+import { DEPTS, ECO, VILLAGES, village } from './data';
+import { spawnRivals } from './state';
 import { runManagers } from './manager';
 import { simulateDay } from './market';
 import { next } from './rng';
@@ -23,8 +24,11 @@ export function checkCapture(st: GameState) {
     if (ok) {
       st.captured[V.id] = st.day;
       log(st, 'ev.captured', { village: V.id });
-      if (V.unlocks && !st.unlocked.includes(V.unlocks)) {
+      const limit = st.options.villages ?? VILLAGES.length;
+      const nextIdx = VILLAGES.findIndex((x) => x.id === V.unlocks);
+      if (V.unlocks && !st.unlocked.includes(V.unlocks) && nextIdx < limit) {
         st.unlocked.push(V.unlocks);
+        if (village(V.unlocks).lateRival) spawnRivals(st, V.unlocks);
         log(st, 'ev.unlocked', { village: V.unlocks });
       }
     }

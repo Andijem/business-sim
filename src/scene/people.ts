@@ -21,7 +21,7 @@ function routeTo(v: LotView, fromLeft: boolean): THREE.Vector3[] {
   const vx = villageX(v.lot.village);
   const c = v.center;
   const side = fromLeft ? -32 : 32;
-  const yard = s >= 10;
+  const yard = s === 10 || s === 11 || s >= 14;
   if (yard) {
     // дворы: по главному тротуару до боковой улицы, потом на север
     const lane = vx + (c.x > vx - 6 ? -3.75 : -8.25);

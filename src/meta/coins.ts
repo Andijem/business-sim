@@ -61,6 +61,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'kopeechkino', coins: 30, done: (st) => 'kopeechkino' in st.captured },
   { id: 'million', coins: 30, done: (st) => st.companies[0].cash >= 1_000_000 },
   { id: 'barysh', coins: 50, done: (st) => 'barysh' in st.captured },
+  { id: 'grosh', coins: 60, done: (st) => 'grosh' in st.captured },
+  { id: 'navarinka', coins: 80, done: (st) => 'navarinka' in st.captured },
 ];
 
 /** Новые достижения: отмечает их и начисляет монетки. */

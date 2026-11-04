@@ -222,7 +222,7 @@ export function setUsn(st: GameState, usn: 6 | 15): Result {
   return OK;
 }
 
-/** Обычный кредит на развитие: не больше 20 дней прибыли компании, платежи раз в сезон. */
+/** Кредит на развитие: один за раз, не больше 10 дней прибыли компании, платежи раз в сезон. */
 export function loanLimit(st: GameState): number {
   const profit = player(st).points.reduce((a, p) => a + Math.max(0, p.profitEma ?? 0), 0);
   const owed = st.loans.reduce((a, l) => a + l.principal, 0);
@@ -237,6 +237,7 @@ export function loanRate(st: GameState): number {
 export function takeLoan(st: GameState, amount: number): Result {
   if (!st.options.finance) return fail('finance');
   if (frozen(st)) return fail('frozen');
+  if (st.loans.filter((l) => l.kind === 'loan').length >= ECO.finance.loanMaxCount) return fail('limit');
   if (amount <= 0 || amount > loanLimit(st)) return fail('limit');
   const f = ECO.finance;
   const r = loanRate(st);

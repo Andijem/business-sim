@@ -117,14 +117,15 @@ describe('действия игрока', () => {
     expect(openPoint(st, 'kopeechkino', 'coffee', 0)).toEqual({ ok: false, reason: 'frozen' });
   });
 
-  it('кредит на развитие: не больше 20 дней прибыли, гасится по сезонам', () => {
+  it('кредит на развитие: один за раз, не больше 10 дней прибыли, гасится по сезонам', () => {
     const st = fresh();
     for (let i = 0; i < 7; i++) advanceDay(st);
     expect(takeLoan(st, 1e7).ok).toBe(false);
     const before = player(st).cash;
-    expect(takeLoan(st, 20000).ok).toBe(true);
-    expect(player(st).cash).toBe(before + 20000);
     expect(takeLoan(st, loanLimit(st) + 1).ok).toBe(false);
+    expect(takeLoan(st, 10000).ok).toBe(true);
+    expect(player(st).cash).toBe(before + 10000);
+    expect(takeLoan(st, 1000).ok).toBe(false); // второй кредит, пока первый не погашен
     for (let i = 0; i < 7 * 10; i++) advanceDay(st);
     expect(st.loans).toHaveLength(0);
   });

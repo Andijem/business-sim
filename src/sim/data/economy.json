@@ -14,7 +14,7 @@
   "finance": {
     "overdraftRevenueDays": 3, "overdraftWeekly": 0.03,
     "rescueAfterDays": 14, "rescueWeekly": 0.08, "rescueWeeks": 8,
-    "loanWeekly": 0.06, "loanAccDiscount": 0.01, "loanWeeks": 10, "loanMaxProfitDays": 20
+    "loanWeekly": 0.06, "loanAccDiscount": 0.01, "loanWeeks": 10, "loanMaxProfitDays": 10, "loanMaxCount": 1
   },
   "cards": { "dailyChance": 0.6, "maxPending": 2 }
 }

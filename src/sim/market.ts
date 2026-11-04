@@ -1,5 +1,5 @@
 import { ECO, MARKET_K, NICHES, VILLAGES, VILLAGE_MIX, seg, trafficRent } from './data';
-import { attractiveness, modAdd, modMult, quality, service, unitPrice, upgradeFx } from './formulas';
+import { attractiveness, effPriceIdx, modAdd, modMult, quality, service, unitPrice, upgradeFx } from './formulas';
 import { next } from './rng';
 import type { GameState, NicheId, Point } from './types';
 
@@ -106,7 +106,7 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         p.profitEma = (p.profitEma ?? profit) * 0.9 + profit * 0.1;
         const q = qs.get(p)!;
         const srv = service(p, co, util);
-        const value = Math.max(0, Math.min(100, 50 + 150 * (1 - p.priceIdx)));
+        const value = Math.max(0, Math.min(100, 50 + 150 * (1 - effPriceIdx(p))));
         const waitPen = Math.min(30, (40 * lost) / Math.max(1, served + lost));
         const [wq, ws, wv] = S.sat;
         let sat = wq * q + ws * srv + wv * value - waitPen;

@@ -6,6 +6,7 @@ import {
 } from '../sim';
 import type { GameEvent, GameState, NicheId, Raw, Result, Seg } from '../sim';
 import { makeSmart } from '../sim/strategies';
+import { nextHint } from './tutorial';
 import './balance.css';
 
 const money = (x: number) => Math.round(x).toLocaleString('ru-RU');
@@ -49,7 +50,13 @@ export function mountBalance(
   el.className = 'balance hidden';
   root.appendChild(el);
   let toast = '';
+  let help = false;
   const smart = makeSmart();
+  const store = {
+    get: (): boolean => { try { return localStorage.getItem('temka.hints') !== 'off'; } catch { return true; } },
+    set: (on: boolean) => { try { localStorage.setItem('temka.hints', on ? 'on' : 'off'); } catch { /* приватный режим */ } },
+  };
+  let hints = store.get();
 
   const act = (r: Result | boolean) => {
     if (typeof r === 'object' && !r.ok) toast = tk(`ui.fail.${r.reason}`);
@@ -166,8 +173,18 @@ export function mountBalance(
     const events = st.events.slice(-14).reverse()
       .map((e) => `<div class="ev"><span>${e.day + 1}</span> ${eventText(e)}</div>`).join('');
     const limit = loanLimit(st);
+    const hint = nextHint(st);
+    const hintHtml = hints
+      ? `<div class="hint"><b>${t('tut.title')}</b> ${tk(hint.key, {
+          ...hint.params, niche: hint.params?.niche ? tk(`niche.${hint.params.niche}`) : '',
+        })}<div><button class="ghost" data-a="hints">${t('tut.hide')}</button></div></div>`
+      : '';
+    const helpHtml = help ? `<div class="help">${t('tut.helpText')}</div>` : '';
     el.innerHTML = `
-      <header><b>${t('ui.title')}</b><button data-a="close">${t('ui.close')}</button></header>
+      <header><b>${t('ui.title')}</b><span><button class="ghost" data-a="help">${t('tut.help')}</button>
+        ${hints ? '' : `<button class="ghost" data-a="hints">${t('tut.show')}</button>`}
+        <button data-a="close">${t('ui.close')}</button></span></header>
+      ${helpHtml}${hintHtml}
       ${st.bankrupt ? `<div class="toast">${t('ui.bankrupt')}</div>` : ''}
       ${toast ? `<div class="toast">${toast}</div>` : ''}
       <section>
@@ -190,6 +207,10 @@ export function mountBalance(
       <h3>${t('ui.depts')}</h3>${depts}
       <h3>${t('ui.rival')}</h3>${rivalHtml}
       <h3>${t('ui.events')}</h3>${events}`;
+    if (hints && hint.target) {
+      const b = el.querySelector(`button[data-a="${hint.target}"]`);
+      b?.classList.add('pulse');
+    }
   }
 
   el.addEventListener('click', (ev) => {
@@ -201,6 +222,8 @@ export function mountBalance(
     const p = st.companies[0].points.find((x) => x.id === id);
     switch (b.dataset.a) {
       case 'close': el.classList.add('hidden'); return;
+      case 'help': help = !help; return render();
+      case 'hints': hints = !hints; store.set(hints); return render();
       case 'day1': return day(1);
       case 'day7': return day(7);
       case 'auto7': return day(7, true);

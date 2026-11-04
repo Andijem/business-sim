@@ -53,6 +53,9 @@ export function service(p: Point, co: Company, util: number): number {
   return Math.max(0, Math.min(100, s));
 }
 
+/** Цена относительно рынка с учётом прокачек и карточек: на неё реагируют гости. */
+export const effPriceIdx = (p: Point): number => p.priceIdx * upgradeFx(p).priceMult * modMult(p, 'price');
+
 export function attractiveness(p: Point, co: Company, q: number): number {
   const N = NICHES[p.niche];
   const S = seg(p.seg);
@@ -60,7 +63,7 @@ export function attractiveness(p: Point, co: Company, q: number): number {
   return (
     repm *
     (q / 50) ** 0.8 *
-    p.priceIdx ** (-N.elasticity * S.elast) *
+    effPriceIdx(p) ** (-N.elasticity * S.elast) *
     (0.7 + 0.6 * p.loyal) *
     (1 + ECO.mktBonus[co.depts.mkt]) *
     p.traffic *

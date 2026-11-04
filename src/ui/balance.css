@@ -21,3 +21,9 @@
 .balance .toast { background: #fbebeb; color: #8a2b2b; border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
 .balance .ev span { display: inline-block; min-width: 2.2em; color: #8a857a; }
 @media (min-width: 700px) { .balance { left: auto; width: 520px; box-shadow: -4px 0 20px #0002; } }
+.balance header span { display: flex; gap: 4px; }
+.balance .hint { background: #e5f4e4; border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
+.balance .hint b { color: #2f6f62; }
+.balance .help { background: #fff; border-radius: 12px; padding: 10px 12px; margin: 8px 0; box-shadow: 0 1px 4px #0002; }
+.balance button.pulse { animation: pulse 1.2s ease-in-out infinite; box-shadow: 0 0 0 3px #f0b429; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px #f0b42966; } }

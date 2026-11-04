@@ -8,7 +8,6 @@ import type { GameState, ManagerRules, Mod, NicheId, Point } from './types';
 export type Effect =
   | { t: 'cash'; v: number }
   | { t: 'mod'; stat: Mod['stat']; mult?: number; add?: number; days: number }
-  | { t: 'price'; mult: number }
   | { t: 'raw'; v: -1 | 0 | 1 }
   | { t: 'rep'; add: number }
   | { t: 'skill'; set?: number; add?: number }
@@ -52,9 +51,6 @@ function apply(st: GameState, p: Point, card: string, effects: Effect[]) {
         // Постоянный эффект той же карточки заменяет прежний, а не копится (прибавка бариста не растёт по кругу).
         if (e.days < 0) p.mods = p.mods.filter((m) => !(m.days < 0 && m.src === card && m.stat === e.stat));
         p.mods.push({ stat: e.stat, mult: e.mult, add: e.add, days: e.days, src: card });
-        break;
-      case 'price':
-        p.priceIdx = Math.max(0.5, Math.min(2, p.priceIdx * e.mult));
         break;
       case 'raw':
         p.raw = e.v;

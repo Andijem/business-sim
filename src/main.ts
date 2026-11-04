@@ -64,7 +64,8 @@ loadGame().then((saved) => {
     balance.render();
   }
 });
-if (location.hash === '#balance') balance.open();
+// Пока сцена — заглушка, игра стартует сразу в текстовом режиме (адрес с #scene показывает сцену).
+if (location.hash !== '#scene') balance.open();
 const pin = makePin(ui, '', t('shop.coffee'), t('village.kopeechkino'));
 const pinPos = new THREE.Vector3(COFFEE.x0 + COFFEE.w / 2, COFFEE.h + 3, COFFEE.z0 + COFFEE.d / 2);
 

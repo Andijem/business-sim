@@ -152,4 +152,6 @@ export interface GameState {
   scheduled: { day: number; pointId: number; card: string; effects: unknown[] }[];
   cardCooldown: Record<string, number>;
   options: GameOptions;
+  /** День победы: захвачены все деревни и районы, «Всё схвачено» продаёт игроку вывеску. */
+  wonDay?: number;
 }

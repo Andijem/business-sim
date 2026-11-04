@@ -42,9 +42,24 @@ export function eventText(e: GameEvent): string {
   return tk(e.key, p);
 }
 
+/** Что показывает панель: весь текстовый режим или одну шторку поверх сцены. */
+export type Sheet =
+  | { kind: 'full' }
+  | { kind: 'point'; id: number }
+  | { kind: 'lot'; village: string; niche: NicheId }
+  | { kind: 'rival'; id: number }
+  | { kind: 'depts' }
+  | { kind: 'cards' }
+  | { kind: 'summary' }
+  | { kind: 'money' }
+  | { kind: 'manage' }
+  | { kind: 'help' };
+
 export interface BalanceScreen {
-  open(): void;
+  open(sheet?: Sheet): void;
   render(): void;
+  isOpen(): boolean;
+  close(): void;
 }
 
 /**
@@ -59,7 +74,9 @@ export function mountBalance(
   onNewGame: () => void,
   onImport: (code: string) => boolean,
   exportCode: () => string,
+  onClose: () => void = () => {},
 ): BalanceScreen {
+  let sheet: Sheet = { kind: 'full' };
   const el = document.createElement('div');
   el.className = 'balance hidden';
   root.appendChild(el);
@@ -277,7 +294,6 @@ export function mountBalance(
   }
 
   function manageTab(st: GameState): string {
-    const me = st.companies[0];
     const villages = VILLAGES.map((V) => {
       const status = V.id in st.captured
         ? `✅ ${t('ui.captured', { day: st.captured[V.id] + 1 })}`
@@ -293,25 +309,11 @@ export function mountBalance(
     const open: string[] = [];
     for (const V of VILLAGES.filter((v) => st.unlocked.includes(v.id))) {
       for (const n of Object.keys(V.lots) as NicheId[]) {
-        if (!freeLot(st, V.id, n)) continue;
-        open.push(`<div class="row"><b>${ICON[n]} ${tk(`niche.${n}`)}</b> · ${tk(`village.${V.id}`)}<div class="btns">${SEG_LIST.map(
-          (s) => `<button data-a="open" data-v="${V.id}|${n}|${s}">${tk(`segName.${n}.${s}`)} · ${money(openPrice(n, s))} Б${
-            fxHtml(tryAction(st, { a: 'open', village: V.id, niche: n, seg: s }))}</button>`,
-        ).join('')}<button class="ghost" data-a="openLoan" data-v="${V.id}|${n}|0">${t('ui.openLoan')}</button></div></div>`);
+        if (freeLot(st, V.id, n)) open.push(openRow(st, V.id, n));
       }
     }
-    const depts = DEPTS.map((d) => {
-      const l = me.depts[d];
-      const can = l < deptCap(st);
-      return `<div class="row"><b>${tk(`dept.${d}`)}</b> · ${t('ui.level', { level: l })}
-        <small class="muted">${tk(`ui.dept.${d}`)}</small>
-        <div class="btns">${can ? `<button data-a="dept" data-v="${d}">${t('ui.deptBuy', { level: l + 1, cost: money(ECO.deptCost[l]) })}${fxHtml(tryAction(st, { a: 'dept', dept: d }))}${d === 'acc' ? `<small class="fx">${t('ui.fx.accNote')}</small>` : ''}</button>` : `<span class="muted">${t('ui.deptMax')}</span>`}</div></div>`;
-    }).join('');
-    const rival = st.companies[1].points.map((p) => `<div class="row">${ICON[p.niche]} ${t('ui.rivalLine', {
-        niche: tk(`niche.${p.niche}`), village: tk(`village.${p.village}`), traffic: tk(`traffic.${p.traffic}`),
-        rep: p.rep.toFixed(1), price: p.priceIdx.toFixed(2),
-      })}${p.forSale ? ` <span class="tag warn">${t('ui.forSale')}</span>` : ''}
-      ${st.unlocked.includes(p.village) ? `<div class="btns"><button data-a="buyout" data-id="${p.id}">${t('ui.buyout', { cost: money(buyoutPrice(p)) })}${fxHtml(tryAction(st, { a: 'buyout', id: p.id }))}</button></div>` : ''}</div>`).join('');
+    const depts = deptsHtml(st);
+    const rival = st.companies[1].points.map((p) => rivalRow(st, p)).join('');
     const events = st.events.slice(-14).reverse().map((e) => `<div class="ev"><span>${e.day + 1}</span> ${eventText(e)}</div>`).join('');
     return `${rivalBlock(st)}
       <h3>${t('ui.villages')}</h3><div class="panel">${villages}</div>
@@ -327,9 +329,100 @@ export function mountBalance(
       <h3>${t('ui.events')}</h3><div class="panel">${events}</div>`;
   }
 
+  function deptsHtml(st: GameState): string {
+    const me = st.companies[0];
+    return DEPTS.map((d) => {
+      const l = me.depts[d];
+      const can = l < deptCap(st);
+      return `<div class="row"><b>${tk(`dept.${d}`)}</b> · ${t('ui.level', { level: l })}
+        <small class="muted">${tk(`ui.dept.${d}`)}</small>
+        <div class="btns">${can ? `<button data-a="dept" data-v="${d}">${t('ui.deptBuy', { level: l + 1, cost: money(ECO.deptCost[l]) })}${fxHtml(tryAction(st, { a: 'dept', dept: d }))}${d === 'acc' ? `<small class="fx">${t('ui.fx.accNote')}</small>` : ''}</button>` : `<span class="muted">${t('ui.deptMax')}</span>`}</div></div>`;
+    }).join('');
+  }
+
+  function rivalRow(st: GameState, p: Point): string {
+    return `<div class="row">${ICON[p.niche]} ${t('ui.rivalLine', {
+        niche: tk(`niche.${p.niche}`), village: tk(`village.${p.village}`), traffic: tk(`traffic.${p.traffic}`),
+        rep: p.rep.toFixed(1), price: p.priceIdx.toFixed(2),
+      })}${p.forSale ? ` <span class="tag warn">${t('ui.forSale')}</span>` : ''}
+      ${st.unlocked.includes(p.village) ? `<div class="btns"><button data-a="buyout" data-id="${p.id}">${t('ui.buyout', { cost: money(buyoutPrice(p)) })}${fxHtml(tryAction(st, { a: 'buyout', id: p.id }))}</button></div>` : ''}</div>`;
+  }
+
+  /** Кнопки открытия точки на свободном участке. */
+  function openRow(st: GameState, v: string, n: NicheId): string {
+    return `<div class="row"><b>${ICON[n]} ${tk(`niche.${n}`)}</b> · ${tk(`village.${v}`)}<div class="btns">${SEG_LIST.map(
+      (s) => `<button data-a="open" data-v="${v}|${n}|${s}">${tk(`segName.${n}.${s}`)} · ${money(openPrice(n, s))} Б${
+        fxHtml(tryAction(st, { a: 'open', village: v, niche: n, seg: s }))}</button>`,
+    ).join('')}<button class="ghost" data-a="openLoan" data-v="${v}|${n}|0">${t('ui.openLoan')}</button></div></div>`;
+  }
+
+  function cardsHtml(st: GameState): string {
+    const me = st.companies[0];
+    return st.pending.map((pc) => {
+      const c = cardDef(pc.card);
+      const p = me.points.find((x) => x.id === pc.pointId);
+      return `<div class="card"><small>${p ? `${ICON[p.niche]} ${tk(`niche.${p.niche}`)} · ${tk(`village.${p.village}`)}` : ''}</small>
+        <b>${tk(`card.${c.id}.title`)}</b><div>${tk(`card.${c.id}.text`)}</div>
+        ${c.options.map((o) => `<button data-a="card" data-id="${pc.uid}" data-v="${o.id}">${tk(`card.${c.id}.${o.id}`)}<small>${tk(`card.${c.id}.${o.id}.hint`)}</small></button>`).join('')}</div>`;
+    }).join('');
+  }
+
+  /** Итог дня: деньги, гости, события вчерашнего дня и совет на завтра. */
+  function summaryHtml(st: GameState): string {
+    const me = st.companies[0];
+    const served = me.points.reduce((a, p) => a + (p.last?.served ?? 0), 0);
+    const lost = me.points.reduce((a, p) => a + (p.last?.lost ?? 0), 0);
+    const evs = st.events.filter((e) => e.day === st.day - 1 && !e.key.startsWith('ev.card'))
+      .map((e) => `<div class="ev">${eventText(e)}</div>`).join('');
+    const hint = hints ? nextHint(st) : null;
+    return `<h3>${t('ui.sum.title', { day: st.day })}</h3>
+      <div class="panel"><div class="big">${t('ui.sum.guests', { served: Math.round(served), lost: Math.round(lost) })}</div>
+      ${bdTable(yesterday(st), false)}</div>
+      ${evs ? `<div class="panel">${evs}</div>` : ''}
+      ${hint && hint.key.startsWith('tut.best') ? `<div class="hint"><b>💡</b> ${tk(hint.key, { ...hint.params })}</div>` : ''}
+      <div class="btns"><button data-a="close">${t('ui.sum.next')}</button></div>`;
+  }
+
+  function sheetHtml(st: GameState): string {
+    const me = st.companies[0];
+    switch (sheet.kind) {
+      case 'point': {
+        const p = me.points.find((x) => x.id === (sheet as { id: number }).id);
+        return p ? pointCard(p) : '';
+      }
+      case 'lot': {
+        const { village: v, niche: n } = sheet;
+        return freeLot(st, v, n) ? `<h3>${t('ui.sheet.lot')}</h3><div class="panel">${openRow(st, v, n)}</div>`
+          : `<div class="muted">${t('ui.noLots')}</div>`;
+      }
+      case 'rival': {
+        const id = sheet.id;
+        const p = st.companies[1].points.find((x) => x.id === id);
+        return `${p ? `<h3>${t('ui.rival')}</h3><div class="panel">${rivalRow(st, p)}</div>` : ''}${rivalBlock(st)}`;
+      }
+      case 'depts': return `<h3>${t('ui.depts')}</h3><div class="panel">${deptsHtml(st)}</div>`;
+      case 'cards': return cardsHtml(st);
+      case 'summary': return summaryHtml(st);
+      case 'money': return moneyTab(st);
+      case 'manage': return manageTab(st);
+      case 'help': return `<h3>${t('tut.help')}</h3><div class="panel">${t('tut.scene.help')}</div><div class="panel">${t('tut.helpText')}</div>
+        <div class="btns"><button class="ghost" data-a="hints">${hints ? t('tut.hide') : t('tut.show')}</button></div>`;
+      default: return '';
+    }
+  }
+
   function render() {
     const st = getState();
     checkAssist(st);
+    if (sheet.kind !== 'full') {
+      if (sheet.kind === 'cards' && !st.pending.length) return close();
+      el.className = 'balance sheet';
+      el.innerHTML = `<div class="sheet-back" data-close="1"></div><div class="sheet-body">
+        <button class="sheet-x" data-a="close">✕</button>
+        ${toast ? `<div class="toast">${toast}</div>` : ''}${sheetHtml(st)}</div>`;
+      return;
+    }
+    el.className = 'balance';
     const me = st.companies[0];
     const rep = me.points.length ? me.points.reduce((a, p) => a + p.rep, 0) / me.points.length : 0;
     const dayProfit = me.points.reduce((a, p) => a + (p.last?.profit ?? 0), 0)
@@ -342,13 +435,7 @@ export function mountBalance(
         })}${hintTab && hintTab !== tab ? ` <b>${t('ui.goTab', { tab: tk(`ui.tab.${hintTab}`) })}</b>` : ''}
         <button class="link" data-a="hints">${t('tut.hide')}</button></div>`
       : '';
-    const cards = st.pending.map((pc) => {
-      const c = cardDef(pc.card);
-      const p = me.points.find((x) => x.id === pc.pointId);
-      return `<div class="card"><small>${p ? `${ICON[p.niche]} ${tk(`niche.${p.niche}`)} · ${tk(`village.${p.village}`)}` : ''}</small>
-        <b>${tk(`card.${c.id}.title`)}</b><div>${tk(`card.${c.id}.text`)}</div>
-        ${c.options.map((o) => `<button data-a="card" data-id="${pc.uid}" data-v="${o.id}">${tk(`card.${c.id}.${o.id}`)}<small>${tk(`card.${c.id}.${o.id}.hint`)}</small></button>`).join('')}</div>`;
-    }).join('');
+    const cards = cardsHtml(st);
     const body = tab === 'points' ? pointsTab(st) : tab === 'money' ? moneyTab(st) : manageTab(st);
     el.innerHTML = `
       <div class="bar">
@@ -375,7 +462,15 @@ export function mountBalance(
     }
   }
 
+  function close() {
+    el.classList.add('hidden');
+    toast = '';
+    sheet = { kind: 'full' };
+    onClose();
+  }
+
   el.addEventListener('click', (ev) => {
+    if ((ev.target as HTMLElement).dataset.close) return close();
     const b = (ev.target as HTMLElement).closest('button');
     if (!b) return;
     const st = getState();
@@ -383,7 +478,7 @@ export function mountBalance(
     const v = b.dataset.v ?? '';
     const p = st.companies[0].points.find((x) => x.id === id);
     switch (b.dataset.a) {
-      case 'close': el.classList.add('hidden'); return;
+      case 'close': return close();
       case 'help': help = !help; return render();
       case 'hints': hints = !hints; store.set(hints); return render();
       case 'tab': tab = v as Tab; el.scrollTop = 0; return render();
@@ -403,12 +498,18 @@ export function mountBalance(
       case 'openLoan': {
         const [vid, n, s] = v.split('|');
         const r = openPoint(st, vid, n as NicheId, Number(s) as Seg, { pay: b.dataset.a === 'openLoan' ? 'loan' : 'cash' });
-        if (r.ok) tab = 'points';
+        if (r.ok) {
+          tab = 'points';
+          if (sheet.kind !== 'full') sheet = { kind: 'point', id: st.companies[0].points[st.companies[0].points.length - 1].id };
+        }
         return act(r);
       }
       case 'buyout': {
         const r = buyout(st, id);
-        if (r.ok) tab = 'points';
+        if (r.ok) {
+          tab = 'points';
+          if (sheet.kind !== 'full') sheet = { kind: 'point', id };
+        }
         return act(r);
       }
       case 'dept': return act(buyDept(st, v as (typeof DEPTS)[number]));
@@ -451,12 +552,17 @@ export function mountBalance(
   });
 
   return {
-    open() {
+    open(s: Sheet = { kind: 'full' }) {
+      sheet = s;
+      toast = '';
       el.classList.remove('hidden');
+      el.scrollTop = 0;
       render();
     },
     render() {
       if (!el.classList.contains('hidden')) render();
     },
+    isOpen: () => !el.classList.contains('hidden'),
+    close,
   };
 }

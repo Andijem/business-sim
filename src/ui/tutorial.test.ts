@@ -30,3 +30,15 @@ describe('подсказки новичку', () => {
     expect(hasKey(nextHint(st).key)).toBe(true);
   });
 });
+
+import { sceneHint } from './play';
+describe('подсказки на сцене', () => {
+  it('первые дни объясняют экран, у всех подсказок есть текст', () => {
+    const st = newGame(5);
+    expect(sceneHint(st).key).toBe('tut.scene.firstDay');
+    for (let d = 0; d < 20; d++) {
+      expect(hasKey(sceneHint(st).key), sceneHint(st).key).toBe(true);
+      advanceDay(st);
+    }
+  });
+});

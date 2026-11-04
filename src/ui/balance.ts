@@ -17,7 +17,7 @@ import './balance.css';
 const money = (x: number) => Math.round(x).toLocaleString('ru-RU');
 const signed = (x: number) => (x >= 0 ? '+' : '−') + money(Math.abs(x));
 const SEG_LIST: Seg[] = [-1, 0, 1];
-const ICON: Record<string, string> = { coffee: '☕', store: '🛒', wash: '🚗' };
+import { NICHE_ICON as ICON } from './icons';
 type Tab = 'points' | 'money' | 'manage';
 const TABS: Tab[] = ['points', 'money', 'manage'];
 

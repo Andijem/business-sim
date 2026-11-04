@@ -26,3 +26,24 @@ describe('гости на улице', () => {
     expect(lots.sync(st)).toBe(true);
   });
 });
+
+import { buildLot } from './buildings';
+import { NICHE_ICON } from '../ui/icons';
+import { hasKey } from '../i18n';
+import type { Point } from '../sim';
+describe('здания всех ниш', () => {
+  it('строятся на любом уровне зала и формате, у ниши есть значок и названия', () => {
+    const base = newGame(1).companies[0].points[0];
+    for (const niche of Object.keys(NICHE_ICON)) {
+      expect(hasKey(`niche.${niche}`), niche).toBe(true);
+      for (const seg of [-1, 0, 1] as const) {
+        expect(hasKey(`segName.${niche}.${seg}`), `${niche}.${seg}`).toBe(true);
+        for (let hall = 0; hall < 4; hall++) {
+          const p = { ...base, niche, seg, hall, staff: hall + 1, upgrades: 3 } as unknown as Point;
+          const m = buildLot(p);
+          expect(m.group.children.length, `${niche} ${hall}`).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+});

@@ -31,14 +31,14 @@ function village(s: VoxelStore, id: string) {
   const asphalt = (i: number, j: number, k: number) => pick(P.road, i, j, k);
   const paving = (i: number, _j: number, k: number) => ((i + k) % 4 === 0 ? P.walk2 : P.walk);
   // боковая дорога на север, к дворам
-  s.fill(X(-8), -0.25, -22, X(-4), 0, 1, asphalt);
+  s.fill(X(-8), -0.25, -31, X(-4), 0, 1, asphalt);
   // зебра и тротуары
   for (let q = 0; q < 5; q++) s.fill(X(-3.4 + q * 0.75), -0.25, 1.2, X(-3.0 + q * 0.75), 0, 4.8, P.paint);
   s.fill(X(-HALF), 0, 0, X(-8.5), 0.25, 1, paving);
   s.fill(X(-3.5), 0, 0, X(HALF), 0.25, 1, paving);
   s.fill(X(-HALF), 0, 5, X(HALF), 0.25, 6, paving);
-  s.fill(X(-8.5), 0, -22, X(-8), 0.25, 0, paving);
-  s.fill(X(-4), 0, -22, X(-3.5), 0.25, 0, paving);
+  s.fill(X(-8.5), 0, -31, X(-8), 0.25, 0, paving);
+  s.fill(X(-4), 0, -31, X(-3.5), 0.25, 0, paving);
   // участки шаблона, на которых в этой деревне нет лотов, занимают дома жителей и огороды
   const used = new Set(villageLots(id).map((l) => l.slot));
   TEMPLATE_SLOTS.forEach((sl, n) => {
@@ -55,7 +55,7 @@ function village(s: VoxelStore, id: string) {
   house(s, X(2), 16.5, 3.25, 3, 0xdfe6d2, 0x6d7f9a);
   const seed = vx;
   [[-1.5, -8.5, 2.6], [12.5, -9, 2.8], [-10.5, 15.5, 2.4], [9, 15, 2.6], [-26, 0, 2.2], [24, -9, 2.6]].forEach(([x, z, h]) => tree(s, X(x), z, h));
-  [[-30, -12, 3.2], [-18, -20, 2.8], [27, 14, 2.6], [-30, 18, 3], [28, -18, 3], [20, -22, 2.8]].forEach(([x, z, h]) => pine(s, X(x), z, h + hash(seed, 1, 2) * 0.4));
+  [[-30, -12, 3.2], [-18, -20, 2.8], [31, 16, 2.6], [-30, 18, 3], [28, -18, 3], [20, -22, 2.8]].forEach(([x, z, h]) => pine(s, X(x), z, h + hash(seed, 1, 2) * 0.4));
   [[-13, 0.5], [-1.5, 0.5], [10, 0.5], [2, 5.4], [13, 5.4], [22, 0.5], [-22, 5.4]].forEach(([x, z]) => lamp(s, X(x), z));
   car(s, X(-10), 1.5, 0xe9e2d6); car(s, X(18), 3.5, 0x3b7fbf); car(s, X(-7.5), -12, 0xe8a84a, true);
 }

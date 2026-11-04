@@ -75,3 +75,8 @@ export function attractiveness(p: Point, co: Company, q: number): number {
 export function unitPrice(p: Point): number {
   return NICHES[p.niche].refPrice * seg(p.seg).price * p.priceIdx * upgradeFx(p).priceMult * modMult(p, 'price');
 }
+
+/** Звёзды, к которым тянется репутация при таком довольстве (0–100). */
+export const repFromSat = (sat: number): number => 1 + 4 * Math.max(0, Math.min(1, (sat - 25) / 55));
+/** Во сколько раз звёзды меняют поток гостей (★3 = 1). */
+export const repFlow = (rep: number): number => 0.5 + 0.25 * (rep - 1);

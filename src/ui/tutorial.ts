@@ -1,4 +1,4 @@
-import { ECO, NICHES, VILLAGES, freeLot, openPrice } from '../sim';
+import { ECO, NICHES, VILLAGES, freeLot, openPrice, repFromSat } from '../sim';
 import type { GameState, NicheId } from '../sim';
 
 export interface Hint {
@@ -23,6 +23,8 @@ export function nextHint(st: GameState): Hint {
   );
   if (overloaded && me.cash > 0) return { key: 'tut.queue', target: 'hire' };
   if (st.day < 3) return { key: 'tut.days', target: 'day7' };
+  const falling = me.points.find((p) => p.last && p.newDays === 0 && repFromSat(p.last.sat) < p.rep - 0.4 && p.rep < 3.5);
+  if (falling) return { key: 'tut.repDown', params: { niche: falling.niche } };
   if (me.cash < 0) return { key: 'tut.negative' };
   const deptsBought = Object.values(me.depts).some((l) => l > 0);
   if (!deptsBought && me.cash > ECO.deptCost[0] + 5000) return { key: 'tut.dept', target: 'dept' };

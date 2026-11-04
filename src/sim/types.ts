@@ -37,6 +37,10 @@ export interface DayStats {
   rent: number;
   acquiring: number;
   repair: number;
+  /** Слагаемые довольства: выгода цены, штраф за очередь, штраф премиум-гостя. */
+  value: number;
+  waitPen: number;
+  needPen: number;
 }
 
 export interface ManagerRules {

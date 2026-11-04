@@ -2,7 +2,7 @@ import { t, tk } from '../i18n';
 import {
   DEPTS, ECO, NICHES, VILLAGES, buyDept, buyNicheUpgrade, buyout, buyoutPrice, cardDef, changeFormat, countPoints,
   deptCap, endDay, finishDay, fire, fixedCosts, forecast, freeLot, yesterday, hallPrice, hire, loanLimit, nicheUpgradePrice, openPoint,
-  openPrice, overdraftLimit, resolveCard, seasonOf, setManager, setPrice, setRaw, setUsn, takeLoan, upgradeHall,
+  openPrice, overdraftLimit, repFlow, repFromSat, seg, resolveCard, seasonOf, setManager, setPrice, setRaw, setUsn, takeLoan, upgradeHall,
 } from '../sim';
 import type { GameEvent, GameState, NicheId, Point, Raw, Result, Seg } from '../sim';
 import { makeSmart } from '../sim/strategies';
@@ -117,6 +117,7 @@ export function mountBalance(
         ${stat(t('ui.st.quality'), String(Math.round(L?.q ?? 0)))}
         ${stat(t('ui.st.service'), String(Math.round(L?.s ?? 0)))}
       </div>
+      ${L ? repDetails(p) : ''}
       ${L ? `<details class="why"><summary>${t('ui.why')}</summary>${bdTable({
         rev: L.rev, cogs: L.cogs, wages: L.wages, rent: L.rent, acquiring: L.acquiring, repair: L.repair, depts: 0, profit: L.profit,
       }, false)}</details>` : ''}
@@ -131,6 +132,31 @@ export function mountBalance(
         .map((s) => ghost('format', t('ui.format', { seg: tk(`seg.${s}`), cost: money(openPrice(p.niche, s) * ECO.formatChange.costShare) }), `data-v="${s}"`))
         .join('')}</div>
     </div>`;
+  }
+
+  /** «Почему столько звёзд»: слагаемые довольства и куда движется рейтинг. */
+  function repDetails(p: Point): string {
+    const L = p.last!;
+    const S = seg(p.seg);
+    const [wq, ws, wv] = S.sat;
+    const f = (x: number) => x.toFixed(0);
+    const row = (k: string, v: number, params: Record<string, string | number> = {}) =>
+      `<tr><td>${tk(`ui.rp.${k}`, params)}<small>${tk(`ui.rp.${k}.hint`)}</small></td><td class="${v < 0 ? 'neg' : 'pos'}">${v < 0 ? '−' : '+'}${f(Math.abs(v))}</td></tr>`;
+    const target = repFromSat(L.sat);
+    const trend = target > p.rep + 0.05 ? 'up' : target < p.rep - 0.05 ? 'down' : 'flat';
+    const top = [wq, ws, wv].indexOf(Math.max(wq, ws, wv));
+    return `<details class="why"><summary>${t('ui.rp.title', { rep: p.rep.toFixed(1).replace('.', ',') })}</summary>
+      <small class="muted">${t('ui.rp.intro', { up: Math.round((repFlow(5) / repFlow(3) - 1) * 100) })}</small>
+      <table class="bd">
+        ${row('quality', wq * L.q, { v: f(L.q), w: String(wq).replace('.', ',') })}
+        ${row('service', ws * L.s, { v: f(L.s), w: String(ws).replace('.', ',') })}
+        ${row('value', wv * L.value, { v: f(L.value), w: String(wv).replace('.', ',') })}
+        ${L.waitPen > 0.5 ? row('wait', -L.waitPen) : ''}
+        ${L.needPen > 0.5 ? row('need', -L.needPen) : ''}
+        <tr class="sum"><td>${t('ui.rp.sat')}</td><td>${f(L.sat)} / 100</td></tr></table>
+      <div><b>${t(`ui.rp.trend.${trend}` as 'ui.rp.trend.up', { target: target.toFixed(1).replace('.', ',') })}</b></div>
+      <small class="muted">${t('ui.rp.weights', { seg: tk(`segName.${p.niche}.${p.seg}`), top: tk(`ui.rp.w.${top}`) })}</small>
+    </details>`;
   }
 
   /** Таблица «выручка минус расходы = прибыль» с подсказкой к каждой строке. */

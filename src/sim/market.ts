@@ -122,7 +122,8 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         const waitPen = Math.min(30, (40 * lost) / Math.max(1, served + lost));
         const [wq, ws, wv] = S.sat;
         let sat = wq * q + ws * srv + wv * value - waitPen;
-        if (S.need) sat -= 0.6 * Math.max(0, S.need - Math.min(q, srv));
+        const needPen = S.need ? 0.6 * Math.max(0, S.need - Math.min(q, srv)) : 0;
+        if (S.need) sat -= needPen;
         p.satEma += (sat - p.satEma) / (p.newDays > 0 ? 7 : 14);
         p.rep = 1 + 4 * Math.max(0, Math.min(1, (p.satEma - 25) / 55));
         p.loyal += (Math.max(0, Math.min(1, (sat - 35) / 45 + modAdd(p, 'loyal'))) - p.loyal) / 7;
@@ -131,7 +132,7 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         const wages = wagesOf(p);
         p.last = {
           demand, served, lost, qlost, util, q, s: srv, sat, rev, profit,
-          cogs, wages, rent: fixed - wages, acquiring, repair,
+          cogs, wages, rent: fixed - wages, acquiring, repair, value, waitPen, needPen,
         };
       }
     }

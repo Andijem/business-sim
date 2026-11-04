@@ -9,7 +9,7 @@ import { mountBalance } from './ui/balance';
 import { mountPlay } from './ui/play';
 import { NICHE_ICON } from './ui/icons';
 import { t, tk } from './i18n';
-import { OFFLINE_MAX_DAYS, village, catchUp, endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
+import { OFFLINE_MAX_DAYS, village, nichesOpen, catchUp, endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
 import { checkAchievements, dailyLogin, offlineMax, timeMult } from './meta/coins';
 import { getMeta, loadMetaNow, saveMetaNow } from './meta/store';
 import { buzz, initSound, sfx } from './ui/sound';
@@ -224,10 +224,13 @@ function syncPins() {
     }
     const p = v.lot.point;
     const locked = !state.unlocked.includes(v.lot.village);
+    const soon = !p && !nichesOpen(state.unlocked, village(v.lot.village)).includes(v.lot.niche);
     const icon = NICHE_ICON[v.lot.niche] ?? '🏠';
     b.hidden = locked && !p;
-    b.className = !p ? 'free' : p.owner === 0 ? 'mine' : p.forSale ? 'sale' : village(p.village).city ? 'rival corp' : 'rival';
-    b.innerHTML = !p
+    b.className = soon ? 'free soon' : !p ? 'free' : p.owner === 0 ? 'mine' : p.forSale ? 'sale' : village(p.village).city ? 'rival corp' : 'rival';
+    b.innerHTML = soon
+      ? `${icon} ${t('play.pin.soon')}`
+      : !p
       ? `${icon} ${t('play.pin.free')}`
       : p.owner === 0
         ? `${icon} ★${p.rep.toFixed(1)}<small>${tk(`niche.${p.niche}`)}</small>`
@@ -243,6 +246,11 @@ play.pins.addEventListener('click', (e) => {
 function openLot(v: LotView) {
   const p = v.lot.point;
   if (!state.unlocked.includes(v.lot.village) && (!p || p.owner !== 0)) return;
+  if (!p && !nichesOpen(state.unlocked, village(v.lot.village)).includes(v.lot.niche)) {
+    const after = village(v.lot.village).later?.after;
+    play.toast(t('play.soon', { village: after ? tk(`village.${after}`) : '' }));
+    return;
+  }
   if (!p) {
     fly(v, false);
     balance.open({ kind: 'lot', village: v.lot.village, niche: v.lot.niche });

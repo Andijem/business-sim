@@ -1,4 +1,4 @@
-import { DEPTS, ECO, NICHES, seg, village } from './data';
+import { DEPTS, ECO, NICHES, VILLAGES, nichesOpen, seg, village } from './data';
 import { makePoint, takeLot } from './state';
 import type { DeptId, GameState, ManagerRules, NicheId, Point, Raw, Seg, VillageId } from './types';
 
@@ -48,7 +48,7 @@ export interface OpenOpts {
 export function openPoint(st: GameState, v: VillageId, niche: NicheId, s: Seg, o: OpenOpts = {}): Result {
   if (frozen(st)) return fail('frozen');
   if (!st.unlocked.includes(v)) return fail('locked');
-  if (!(niche in village(v).lots)) return fail('niche');
+  if (!nichesOpen(st.unlocked, village(v)).includes(niche)) return fail('niche');
   if (!freeLot(st, v, niche)) return fail('noLot');
   const cost = openPrice(niche, s, v);
   const co = player(st);
@@ -249,7 +249,9 @@ export function loanLimit(st: GameState): number {
 
 export function loanRate(st: GameState): number {
   const f = ECO.finance;
-  return Math.max(0.01, f.loanWeekly - f.loanAccDiscount * player(st).depts.acc);
+  // Захваченная Кредитовка даёт кредиты вдвое дешевле.
+  const perk = VILLAGES.reduce((m, V) => (V.id in st.captured ? m * (V.loanRateMult ?? 1) : m), 1);
+  return Math.max(0.01, (f.loanWeekly - f.loanAccDiscount * player(st).depts.acc) * perk);
 }
 
 export function takeLoan(st: GameState, amount: number): Result {

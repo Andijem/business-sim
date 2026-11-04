@@ -8,7 +8,7 @@ import type { GameEvent, GameState, NicheId, Point, Raw, Result, Seg } from '../
 import { makeSmart } from '../sim/strategies';
 import { nextHint } from './tutorial';
 import { ASSIST_VILLAGES, assistOn, fxHtml as fxRaw, pointAction, tryAction } from './advice';
-import { log } from '../sim';
+import { log, nichesOpen } from '../sim';
 import { ACHIEVEMENTS, BOOSTS, SPEED_MS, buyBoost, type BoostId } from '../meta/coins';
 import { getMeta, saveMetaNow } from '../meta/store';
 import { musicIsOn, soundOn, toggleMusic, toggleSound } from './sound';
@@ -311,7 +311,7 @@ export function mountBalance(
       const status = V.id in st.captured
         ? `✅ ${t('ui.captured', { day: st.captured[V.id] + 1 })}`
         : st.unlocked.includes(V.id)
-          ? (Object.keys(V.lots) as NicheId[]).map((n) => {
+          ? nichesOpen(st.unlocked, V).map((n) => {
               const mine = countPoints(st, 0, V.id, n);
               const theirs = countPoints(st, 1, V.id, n);
               return `<span class="tag ${mine > theirs ? 'ok' : ''}">${ICON[n]} ${t('ui.score', { niche: tk(`niche.${n}`), mine, theirs })}</span>`;
@@ -321,7 +321,7 @@ export function mountBalance(
     }).join('');
     const open: string[] = [];
     for (const V of VILLAGES.filter((v) => st.unlocked.includes(v.id))) {
-      for (const n of Object.keys(V.lots) as NicheId[]) {
+      for (const n of nichesOpen(st.unlocked, V)) {
         if (freeLot(st, V.id, n)) open.push(openRow(st, V.id, n));
       }
     }

@@ -85,9 +85,16 @@ export interface VillageDef {
   rival?: { share: number; skill: number; rep: number; staff: number; hall: number };
   /** Во сколько раз дороже открытие, зал и прокачки (город). */
   costMult?: number;
+  /** Ниши, чьи участки появляются, когда откроется другая деревня (шиномонтаж и шаурма в Барышах после Кредитовки). */
+  later?: { after: string; niches: NicheId[] };
+  /** После захвата кредиты дешевле: множитель ставки (Кредитовка). */
+  loanRateMult?: number;
   /** Свои правила выкупа (город): доли цены открытия и дни прибыли. */
   buyout?: { openShare?: number; forSaleShare?: number; profitDays?: number };
 }
+/** Ниши деревни, открытые сейчас (без тех, что ждут открытия другой деревни). */
+export const nichesOpen = (unlocked: readonly string[], V: VillageDef): NicheId[] =>
+  (Object.keys(V.lots) as NicheId[]).filter((n) => !V.later || !V.later.niches.includes(n) || unlocked.includes(V.later.after));
 /** Доли спроса по сегментам в деревне или районе в этот сезон. */
 export const mixOf = (V: VillageDef, season: number): number[] =>
   (season === 1 && V.summerMix) || V.mix || VILLAGE_MIX;

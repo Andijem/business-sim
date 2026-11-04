@@ -1,6 +1,6 @@
 import { tk } from '../i18n';
-import { DEPTS, NICHES, VILLAGES, baseline, effect, findPoint, freeLot } from '../sim';
-import type { Action, GameState, NicheId, Raw, Seg, Try, WhatIf } from '../sim';
+import { DEPTS, NICHES, VILLAGES, baseline, effect, findPoint, freeLot, nichesOpen } from '../sim';
+import type { Action, GameState, Raw, Seg, Try, WhatIf } from '../sim';
 
 /** Сколько деревень игрок захватывает с подсказками; дальше он играет сам. */
 export const ASSIST_VILLAGES = 3;
@@ -78,7 +78,7 @@ export function candidates(st: GameState): Action[] {
   }
   for (const d of DEPTS) out.push({ a: 'dept', dept: d });
   for (const V of VILLAGES.filter((v) => st.unlocked.includes(v.id)))
-    for (const n of Object.keys(V.lots) as NicheId[])
+    for (const n of nichesOpen(st.unlocked, V))
       if (freeLot(st, V.id, n)) for (const s of [-1, 0, 1] as Seg[]) out.push({ a: 'open', village: V.id, niche: n, seg: s });
   for (const p of st.companies[1].points) if (st.unlocked.includes(p.village)) out.push({ a: 'buyout', id: p.id });
   return out;

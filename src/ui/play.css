@@ -46,6 +46,7 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #bfe0ee;
 .pins button.rival.corp { background: #34406a; }
 .pins button.sale { background: #d99a1a; }
 .pins button.free { background: rgba(255,250,244,.92); color: #2f6f62; }
+.pins button.free.soon { background: rgba(240,236,228,.85); color: #8a8278; }
 .play .side button.coins { font-size: 16px; line-height: 1; }
 .play .side button.coins small { display: block; font-size: 11px; color: #8a6a10; }
 .fxlayer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }

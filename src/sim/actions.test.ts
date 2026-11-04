@@ -155,3 +155,24 @@ describe('офлайн-прогресс', () => {
     expect(st.day).toBe(18);
   });
 });
+
+describe('v0.4: поздние ниши и дешёвые кредиты', () => {
+  it('шиномонтаж в Барышах открывается только после Кредитовки', async () => {
+    const { newGame } = await import('./state');
+    const { openPoint } = await import('./actions');
+    const st = newGame(1, {});
+    st.unlocked.push('barysh');
+    st.companies[0].cash = 10_000_000;
+    expect(openPoint(st, 'barysh', 'tyre', 0).ok).toBe(false);
+    st.unlocked.push('kreditovka');
+    expect(openPoint(st, 'barysh', 'tyre', 0).ok).toBe(true);
+  });
+  it('захваченная Кредитовка вдвое снижает ставку кредита', async () => {
+    const { newGame } = await import('./state');
+    const { loanRate } = await import('./actions');
+    const st = newGame(1, {});
+    const base = loanRate(st);
+    st.captured.kreditovka = 300;
+    expect(loanRate(st)).toBeCloseTo(base / 2);
+  });
+});

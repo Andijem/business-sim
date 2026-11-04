@@ -112,7 +112,8 @@ export function spawnRivals(st: GameState, v: VillageId) {
   const rival = st.companies[1];
   const fresh: Point[] = [];
   for (const r of START.rival) {
-    if (r.village !== v) continue;
+    // Точка с after появляется, когда открывается та деревня (новые ниши старой деревни).
+    if (((r as { after?: string }).after ?? r.village) !== v) continue;
     const p = makePoint(st, r.niche as NicheId, r.village, 1, { ...r, seg: -1 });
     p.skill = START.rivalSkill;
     rival.points.push(p);

@@ -1,6 +1,6 @@
 import { log, player, rival } from './actions';
 import { drawCards, expireCards, runScheduled } from './cards';
-import { DEPTS, ECO, VILLAGES, village } from './data';
+import { DEPTS, ECO, VILLAGES, nichesOpen, village } from './data';
 import { spawnRivals } from './state';
 import { runManagers } from './manager';
 import { simulateDay } from './market';
@@ -16,7 +16,7 @@ export function checkCapture(st: GameState) {
   for (const V of unlockedNow) {
     if (V.id in st.captured) continue;
     let ok = true;
-    for (const niche of Object.keys(V.lots)) {
+    for (const niche of nichesOpen(st.unlocked, V)) {
       const mine = player(st).points.filter((p) => p.village === V.id && p.niche === niche).length;
       const theirs = rival(st).points.filter((p) => p.village === V.id && p.niche === niche && !p.forSale).length;
       ok = ok && mine > theirs;

@@ -7,5 +7,5 @@ export * from './forecast';
 export * from './rivalry';
 export { simulateDay, seasonOf, fixedCosts, wagesOf } from './market';
 export { quality, service, unitPrice, repFromSat, repFlow } from './formulas';
-export { NICHES, NICHE_IDS, VILLAGES, SEGS, seg, village, ECO, DEPTS } from './data';
+export { NICHES, NICHE_IDS, VILLAGES, SEGS, seg, village, nichesOpen, ECO, DEPTS } from './data';
 export * from './whatif';

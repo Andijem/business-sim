@@ -14,4 +14,9 @@ describe('код прогресса', () => {
     expect(importCode('не код')).toBeNull();
     expect(importCode(btoa('{"a":1}'))).toBeNull();
   });
+  it('старое сохранение без новых полей отбрасывается', () => {
+    const st = newGame(4) as unknown as { companies: { points: Record<string, unknown>[] }[] };
+    delete st.companies[0].points[0].rep;
+    expect(importCode(exportCode(st as never))).toBeNull();
+  });
 });

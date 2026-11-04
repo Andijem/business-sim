@@ -1,29 +1,72 @@
 .balance {
   position: fixed; inset: 0; overflow-y: auto; z-index: 20;
-  background: rgba(250, 247, 238, 0.97); color: #2a2a26;
-  font: 14px/1.4 system-ui, sans-serif; padding: 12px 16px 80px;
+  background: #f4f0e6; color: #2a2a26;
+  font: 14px/1.4 system-ui, sans-serif; padding: 0 16px 80px;
   pointer-events: auto; touch-action: pan-y; -webkit-user-select: text; user-select: text;
 }
 .balance.hidden { display: none; }
-.balance header { display: flex; justify-content: space-between; align-items: center; position: sticky; top: -12px;
-  background: inherit; padding: 6px 0; z-index: 1; }
-.balance h3 { margin: 18px 0 6px; font-size: 15px; color: #2f6f62; }
-.balance .big { font-size: 17px; margin: 4px 0; }
-.balance .row { padding: 6px 0; border-bottom: 1px solid #e4dfd2; }
+.balance h3 { margin: 18px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; color: #6d675c; }
 .balance .muted { color: #8a857a; }
-.balance .btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-.balance button { font: inherit; font-size: 13px; padding: 6px 10px; border-radius: 10px; border: 0;
-  background: #2f6f62; color: #fff; margin: 2px 2px 0 0; cursor: pointer; }
-.balance button.ghost { background: #e8e2d2; color: #2a2a26; }
-.balance .card { background: #fff; border-radius: 14px; padding: 10px 12px; margin: 6px 0; box-shadow: 0 1px 4px #0002; }
+.balance small { font-size: 12px; }
+.balance button { font: inherit; font-size: 13px; padding: 7px 11px; border-radius: 10px; border: 0;
+  background: #2f6f62; color: #fff; margin: 3px 4px 0 0; cursor: pointer; }
+.balance button.ghost { background: #e6e0d0; color: #2a2a26; }
+.balance button.link { background: none; color: #2f6f62; padding: 4px 6px; text-decoration: underline; }
+.balance .btns { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 6px; }
+
+/* верхняя панель: деньги и время всегда на виду */
+.balance .bar { position: sticky; top: 0; z-index: 2; margin: 0 -16px; padding: 10px 16px 8px;
+  background: #2f6f62; color: #fff; display: grid; grid-template-columns: 1fr auto; gap: 4px 10px;
+  box-shadow: 0 2px 8px #0003; padding-top: calc(10px + env(safe-area-inset-top, 0)); }
+.balance .bar .cash small { display: block; opacity: .75; }
+.balance .bar .cash b { font-size: 24px; }
+.balance .bar .cash em { display: block; font-style: normal; font-size: 12px; color: #c9f2c7; }
+.balance .bar .cash em.neg { color: #ffc9c0; }
+.balance .bar .meta { display: flex; flex-direction: column; align-items: flex-end; font-size: 12px; opacity: .9; }
+.balance .bar .time { grid-column: 1 / -1; display: flex; gap: 6px; }
+.balance .bar .time button { flex: 1; background: #fff; color: #2f6f62; font-weight: 700; padding: 9px; }
+.balance .bar .menu { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+.balance .bar .menu button.link { color: #dff1ea; font-size: 12px; }
+
+.balance .tabs { position: sticky; top: var(--bar-h, 132px); z-index: 1; display: flex; gap: 6px; margin: 12px -16px 0;
+  padding: 8px 16px; background: #f4f0e6; border-bottom: 1px solid #e0d9c8; }
+.balance .tabs button { flex: 1; background: #e6e0d0; color: #2a2a26; font-weight: 600; padding: 9px 4px; }
+.balance .tabs button.on { background: #2a2a26; color: #fff; }
+
+.balance .panel { background: #fff; border-radius: 14px; padding: 10px 12px; box-shadow: 0 1px 3px #0001; }
+.balance .panel .big { font-size: 18px; }
+.balance .row { padding: 8px 0; border-bottom: 1px solid #eee8da; }
+.balance .row:last-child { border-bottom: 0; }
+
+.balance .pcard { background: #fff; border-radius: 16px; padding: 12px; margin: 10px 0; box-shadow: 0 1px 4px #0002; }
+.balance .ptitle { display: flex; align-items: center; gap: 10px; }
+.balance .ptitle .icon { font-size: 26px; }
+.balance .ptitle small { display: block; color: #8a857a; }
+.balance .ptitle .stars { margin-left: auto; font-weight: 700; color: #b7791f; }
+.balance .tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.balance .tag { background: #f0ece1; border-radius: 8px; padding: 2px 8px; font-size: 12px; }
+.balance .tag.ok { background: #e5f4e4; color: #23623a; }
+.balance .tag.warn { background: #f9eeda; color: #8a5a12; }
+.balance .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 8px 0; }
+.balance .stat { background: #f7f4ec; border-radius: 10px; padding: 6px 8px; font-weight: 700; font-size: 14px; }
+.balance .stat small { display: block; font-weight: 400; color: #8a857a; font-size: 11px; }
+.balance .stat em { display: block; font-style: normal; font-weight: 400; font-size: 11px; color: #a2412f; }
+.balance .stat.warn { background: #fbebeb; }
+.balance .grp { margin-top: 6px; }
+.balance .grp > small { display: block; color: #8a857a; }
+
+.balance .card { background: #fffbe9; border: 2px solid #f0b429; border-radius: 16px; padding: 10px 12px; margin: 6px 0; }
+.balance .card > small { display: block; color: #8a857a; }
 .balance .card button { display: block; width: 100%; text-align: left; margin-top: 6px; }
-.balance .card button small { display: block; opacity: 0.8; font-size: 12px; }
-.balance .toast { background: #fbebeb; color: #8a2b2b; border-radius: 10px; padding: 8px 10px; margin: 6px 0; }
-.balance .ev span { display: inline-block; min-width: 2.2em; color: #8a857a; }
-@media (min-width: 700px) { .balance { left: auto; width: 520px; box-shadow: -4px 0 20px #0002; } }
-.balance header span { display: flex; gap: 4px; }
-.balance .hint { background: #e5f4e4; border-radius: 12px; padding: 10px 12px; margin: 8px 0; }
+.balance .card button small { display: block; opacity: 0.85; }
+.balance .toast { background: #fbebeb; color: #8a2b2b; border-radius: 10px; padding: 8px 10px; margin: 8px 0; }
+.balance .hint { background: #e5f4e4; border-radius: 12px; padding: 10px 12px; margin: 10px 0 0; }
 .balance .hint b { color: #2f6f62; }
-.balance .help { background: #fff; border-radius: 12px; padding: 10px 12px; margin: 8px 0; box-shadow: 0 1px 4px #0002; }
+.balance .help { background: #fff; border-radius: 12px; padding: 10px 12px; margin: 10px 0 0; box-shadow: 0 1px 4px #0002; }
+.balance .bars { display: flex; align-items: flex-end; gap: 3px; height: 50px; margin-top: 4px; }
+.balance .bars i { flex: 1; background: #2f6f62; border-radius: 3px 3px 0 0; opacity: .8; }
+.balance .ev { padding: 3px 0; }
+.balance .ev span { display: inline-block; min-width: 2.2em; color: #8a857a; }
 .balance button.pulse { animation: pulse 1.2s ease-in-out infinite; box-shadow: 0 0 0 3px #f0b429; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px #f0b42966; } }
+@media (min-width: 700px) { .balance { left: auto; width: 520px; box-shadow: -4px 0 20px #0002; } }

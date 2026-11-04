@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { MODEL_PARITY, STRATEGIES, runStrategy } from './strategies';
+import { cardDef, resolveCard } from './cards';
+import { newGame } from './state';
+import { endDay, finishDay } from './tick';
 
 const SEEDS = 30;
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
@@ -37,5 +40,28 @@ describe('100 дней в полной игре (карточки, налоги,
     expect(median(smart.map((r) => r.cash[99]))).toBeGreaterThan(2 * median(passive.map((r) => r.cash[99])));
     expect(median(smart.map((r) => r.captured.kopeechkino ?? 999))).toBeLessThan(100);
     expect(median(smart.map((r) => r.st.companies[0].points.length))).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe('осторожная игра стоит 10–15% темпа (решение FAJI)', () => {
+  it('smart с осторожными ответами: Копеечкино ≤ 64, Барыши ≤ 125', () => {
+    const k: number[] = [], b: number[] = [];
+    for (let seed = 0; seed < SEEDS; seed++) {
+      const s = STRATEGIES.smart;
+      const st = newGame(seed, {}, s.first ?? {});
+      for (let d = 0; d < 168 && !st.bankrupt; d++) {
+        endDay(st);
+        for (const pc of [...st.pending]) {
+          const c = cardDef(pc.card);
+          resolveCard(st, pc.uid, (c.options.find((o) => o.cautious) ?? c.options[0]).id);
+        }
+        s.act(st);
+        finishDay(st);
+      }
+      k.push(st.captured.kopeechkino ?? 999);
+      b.push(st.captured.barysh ?? 999);
+    }
+    expect(median(k)).toBeLessThanOrEqual(64);
+    expect(median(b)).toBeLessThanOrEqual(125);
   });
 });

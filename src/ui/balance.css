@@ -110,3 +110,8 @@
 .balance .sheet-x { position: sticky; top: 0; float: right; z-index: 2; background: #e6e0d0 !important; color: #2a2a26 !important;
   width: 34px; height: 34px; padding: 0 !important; border-radius: 50% !important; font-size: 16px !important; }
 @keyframes sheetUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.balance .win { margin: 6px 0 4px; padding: 14px; border-radius: 16px; background: linear-gradient(135deg, #f2c230, #e8a84a); color: #3a2a10;
+  font-size: 17px; font-weight: 800; text-align: center; animation: winPop .5s ease-out; }
+.balance .win div { font-size: 13px; font-weight: 600; margin-top: 6px; }
+@keyframes winPop { from { transform: scale(.8); opacity: 0; } to { transform: none; opacity: 1; } }

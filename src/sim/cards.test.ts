@@ -6,8 +6,9 @@ import { newGame } from './state';
 import { advanceDay } from './tick';
 
 describe('карточки решений', () => {
-  it('15 карточек, у каждой есть осторожный вариант и тексты', () => {
-    expect(CARDS).toHaveLength(15);
+  it('60 карточек, у каждой есть осторожный вариант и тексты', () => {
+    expect(CARDS).toHaveLength(60);
+    expect(new Set(CARDS.map((c) => c.id)).size).toBe(CARDS.length);
     for (const c of CARDS) {
       expect(c.options.filter((o) => o.cautious)).toHaveLength(1);
       expect(hasKey(`card.${c.id}.title`)).toBe(true);
@@ -17,6 +18,17 @@ describe('карточки решений', () => {
         expect(hasKey(`card.${c.id}.${o.id}.hint`), `${c.id}.${o.id}.hint`).toBe(true);
       }
     }
+  });
+
+  it('сезонные карточки выпадают только в свой сезон', () => {
+    const seasonal = new Set(CARDS.filter((c) => c.seasons).map((c) => c.id));
+    expect(seasonal.size).toBeGreaterThanOrEqual(12);
+    const st = newGame(11);
+    player(st).cash = 1e6;
+    for (let d = 0; d < 112; d++) advanceDay(st);
+    const got = st.events.filter((e) => (e.key === 'ev.cardNew' || e.key === 'ev.managerCard') && seasonal.has(String(e.params!.card)));
+    expect(got.length).toBeGreaterThan(0);
+    for (const e of got) expect(cardDef(String(e.params!.card)).seasons).toContain(Math.floor(e.day / 7) % 4);
   });
 
   it('выпадают 0–2 в день, без ответа решаются осторожно через сутки', () => {

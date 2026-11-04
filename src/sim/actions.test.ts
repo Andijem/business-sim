@@ -130,3 +130,16 @@ describe('действия игрока', () => {
     expect(st.loans).toHaveLength(0);
   });
 });
+
+import { catchUp } from './tick';
+describe('офлайн-прогресс', () => {
+  it('день за каждые полчаса отсутствия, неделя за 3,5 часа, дальше не копится', () => {
+    const st = newGame(1);
+    expect(catchUp(st, 29 * 60)).toBe(0);
+    expect(catchUp(st, 2 * 3600)).toBe(4);
+    expect(st.day).toBe(4);
+    expect(catchUp(st, 3.5 * 3600)).toBe(7);
+    expect(catchUp(st, 24 * 3600)).toBe(7);
+    expect(st.day).toBe(18);
+  });
+});

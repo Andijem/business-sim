@@ -9,7 +9,7 @@ import { slotOf, villageX } from './scene/layout';
 import { mountBalance } from './ui/balance';
 import { mountPlay } from './ui/play';
 import { t, tk } from './i18n';
-import { endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
+import { catchUp, endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
 import { loadGame, saveGame } from './save/idb';
 import { exportCode, importCode } from './save/code';
 
@@ -78,6 +78,10 @@ const balance = mountBalance(
 /** Шторка закрылась: убираем разрез, отлетаем назад, продолжаем время. */
 function onSheetClosed() {
   lots.setCutaway(null);
+  if (flyTo) {
+    host.focusVillage(flyTo);
+    flyTo = null;
+  }
   goal.dist = Math.max(goal.dist, 64);
   goal.pitch = 0.9;
   if (state.pending.length) {
@@ -98,10 +102,14 @@ balance.open = (s) => {
 };
 
 /** Конец дня: рынок считает день, утром новые карточки. Потом итоги. */
+/** Деревня, к которой подлететь после итогов дня (только что открылась дорога). */
+let flyTo: string | null = null;
 function closeDay() {
   if (state.bankrupt) return;
+  const open0 = state.unlocked.length;
   endDay(state);
   finishDay(state);
+  if (state.unlocked.length > open0) flyTo = state.unlocked[state.unlocked.length - 1];
   hour = DAY_START;
   persist(state);
   balance.open({ kind: 'summary' });
@@ -364,13 +372,33 @@ lots.sync(state);
 homeView();
 syncPins();
 play.update();
+/** Пока игры не было на экране, дни шли сами: догоняем и показываем, что случилось. */
+function awayFor(sec: number) {
+  const day0 = state.day, cash0 = state.companies[0].cash;
+  const days = catchUp(state, sec);
+  if (!days) return;
+  hour = DAY_START;
+  persist(state);
+  balance.open({ kind: 'away', days, day0, cash0 });
+}
 loadGame().then((saved) => {
   if (saved) {
     state = saved.state;
     persist(state);
     homeView();
+    awayFor((Date.now() - saved.savedAt) / 1000);
+  }
+});
+let hiddenAt = 0;
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    hiddenAt = Date.now();
+    saveGame(state).catch(() => {});
+  } else if (hiddenAt) {
+    awayFor((Date.now() - hiddenAt) / 1000);
+    hiddenAt = 0;
   }
 });
 requestAnimationFrame(frame);
 // для автопроверок: поставить час и посмотреть состояние
-Object.assign(window, { __ready: true, __temka: { setHour: (h: number) => { hour = h; requestRender(); }, state: () => state, closeSheet: () => balance.close() } });
+Object.assign(window, { __ready: true, __temka: { setHour: (h: number) => { hour = h; requestRender(); }, state: () => state, closeSheet: () => balance.close(), away: (sec: number) => awayFor(sec) } });

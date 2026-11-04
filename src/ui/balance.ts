@@ -1,7 +1,7 @@
 import { t, tk } from '../i18n';
 import {
   DEPTS, ECO, NICHES, VILLAGES, buyDept, buyNicheUpgrade, buyout, buyoutPrice, cardDef, changeFormat, countPoints,
-  deptCap, endDay, finishDay, fire, fixedCosts, freeLot, hallPrice, hire, loanLimit, nicheUpgradePrice, openPoint,
+  deptCap, endDay, finishDay, fire, fixedCosts, forecast, freeLot, yesterday, hallPrice, hire, loanLimit, nicheUpgradePrice, openPoint,
   openPrice, overdraftLimit, resolveCard, seasonOf, setManager, setPrice, setRaw, setUsn, takeLoan, upgradeHall,
 } from '../sim';
 import type { GameEvent, GameState, NicheId, Point, Raw, Result, Seg } from '../sim';
@@ -117,6 +117,9 @@ export function mountBalance(
         ${stat(t('ui.st.quality'), String(Math.round(L?.q ?? 0)))}
         ${stat(t('ui.st.service'), String(Math.round(L?.s ?? 0)))}
       </div>
+      ${L ? `<details class="why"><summary>${t('ui.why')}</summary>${bdTable({
+        rev: L.rev, cogs: L.cogs, wages: L.wages, rent: L.rent, acquiring: L.acquiring, repair: L.repair, depts: 0, profit: L.profit,
+      }, false)}</details>` : ''}
       <div class="grp"><small>${t('ui.grp.people')}</small>${btn('hire', t('ui.hire'))}${ghost('fire', t('ui.fire'))}
         ${p.hall >= ECO.manager.minHall ? ghost('manager', p.manager ? t('ui.managerOff') : t('ui.manager')) : ''}</div>
       <div class="grp"><small>${t('ui.grp.growth')}</small>
@@ -130,15 +133,25 @@ export function mountBalance(
     </div>`;
   }
 
+  /** Таблица «выручка минус расходы = прибыль» с подсказкой к каждой строке. */
+  function bdTable(b: ReturnType<typeof yesterday>, withHints: boolean): string {
+    const rows: [string, number][] = [
+      ['rev', b.rev], ['cogs', -b.cogs], ['wages', -b.wages], ['rent', -b.rent], ['acquiring', -b.acquiring],
+      ['repair', -b.repair], ['depts', -b.depts],
+    ];
+    const line = ([k, v]: [string, number]) => (v === 0 && k !== 'rev' ? '' : `<tr><td>${tk(`ui.bd.${k}`)}${
+      withHints ? `<small>${tk(`ui.bd.${k}.hint`)}</small>` : ''}</td><td class="${v < 0 ? 'neg' : 'pos'}">${signed(v)}</td></tr>`);
+    return `<table class="bd">${rows.map(line).join('')}<tr class="sum"><td>${t('ui.bd.profit')}${
+      withHints ? `<small>${t('ui.bd.tax.hint')}</small>` : ''}</td><td class="${b.profit < 0 ? 'neg' : 'pos'}">${signed(b.profit)}</td></tr></table>`;
+  }
+
   function pointsTab(st: GameState): string {
     return st.companies[0].points.map(pointCard).join('');
   }
 
   function moneyTab(st: GameState): string {
     const me = st.companies[0];
-    const yRev = me.points.reduce((a, p) => a + (p.last?.rev ?? 0), 0);
     const upkeep = DEPTS.reduce((a, d) => a + ECO.deptUpkeep[me.depts[d]], 0);
-    const yProfit = me.points.reduce((a, p) => a + (p.last?.profit ?? 0), 0) - upkeep;
     const costs = me.points.reduce((a, p) => a + fixedCosts(p), 0) + upkeep;
     const tax = st.usn === 6
       ? me.seasonRev * ECO.tax.usn6
@@ -152,12 +165,19 @@ export function mountBalance(
         })}</div>`).join('')
       : `<div class="muted">${t('ui.noLoans')}</div>`;
     const limit = Math.floor(loanLimit(st) / 10000) * 10000;
+    const fc = forecast(st);
     return `<div class="panel">
         <div class="big">${t('ui.money.cash')}: <b>${money(me.cash)} Б</b></div>
-        <div>${t('ui.money.yesterday', { rev: money(yRev), profit: signed(yProfit) })}</div>
         <div>${t('ui.money.costs', { costs: money(costs) })}</div>
         ${hist.length ? `<small class="muted">${t('ui.money.chart')}</small><div class="bars">${bars}</div>` : ''}
       </div>
+      <h3>${t('ui.fc.title')}</h3><div class="panel"><table class="bd">
+        <tr><td>${t('ui.fc.perDay')}</td><td class="${fc.perDay < 0 ? 'neg' : 'pos'}">${signed(fc.perDay)}</td></tr>
+        <tr><td>${t('ui.fc.season', { days: fc.daysToSeason })}</td><td class="neg">${signed(-fc.tax)}</td></tr>
+        ${fc.loanPayments ? `<tr><td>${t('ui.fc.loans')}</td><td class="neg">${signed(-fc.loanPayments)}</td></tr>` : ''}
+        <tr class="sum"><td>${t('ui.fc.cash')}</td><td>${money(fc.cashAtSeasonEnd)}</td></tr></table>
+        <small class="muted">${t('ui.fc.note')}</small></div>
+      <h3>${t('ui.bd.title')}</h3><div class="panel">${bdTable(yesterday(st), true)}</div>
       <h3>${t('ui.money.tax')}</h3><div class="panel">
         <div>${t('ui.usn', { usn: st.usn })} · ${t('ui.money.season', { rev: money(me.seasonRev), tax: money(tax) })}</div>
         <small class="muted">${t('ui.money.taxText')}</small>
@@ -243,7 +263,7 @@ export function mountBalance(
     const body = tab === 'points' ? pointsTab(st) : tab === 'money' ? moneyTab(st) : manageTab(st);
     el.innerHTML = `
       <div class="bar">
-        <div class="cash"><small>${t('ui.cash')}</small><b>${money(me.cash)} Б</b><em class="${dayProfit < 0 ? 'neg' : ''}">${signed(dayProfit)} ${t('ui.perDay')}</em></div>
+        <div class="cash"><small>${t('ui.cash')}</small><b>${money(me.cash)} Б</b><button class="link em ${dayProfit < 0 ? 'neg' : ''}" data-a="tab" data-v="money">${t('ui.fcShort', { y: signed(dayProfit), sign: signed(forecast(st).perDay) })}</button></div>
         <div class="meta"><span>${t('ui.dayLine', { day: st.day + 1, season: tk(`season.${seasonOf(st.day)}`), year: Math.floor(st.day / 28) + 1 })}</span>
           <span>★ ${rep.toFixed(1)} · ${t('ui.pointsCount')}: ${me.points.length}</span></div>
         <div class="time"><button data-a="day1">${t('ui.next1')}</button><button data-a="day7">${t('ui.next7')}</button></div>

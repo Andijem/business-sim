@@ -15,6 +15,14 @@ export function fixedCosts(p: Point): number {
   return p.staff * N.wage * S.wage * wm + (N.rentDay + N.utilDay) * V.rent * S.rent * trafficRent(p.traffic) + manager;
 }
 
+/** Зарплаты точки в день, включая управляющего (для разбора прибыли на экране). */
+export function wagesOf(p: Point): number {
+  const N = NICHES[p.niche];
+  const S = seg(p.seg);
+  const manager = p.manager ? N.wage * S.wage * ECO.manager.wageMult : 0;
+  return p.staff * N.wage * S.wage * modMult(p, 'wage') + manager;
+}
+
 /**
  * Шаги 1–5 игрового дня для всех точек всех деревень (формулы из документа баланса).
  * Порядок обращений к генератору совпадает с моделью planning/balance/sim.py.
@@ -91,10 +99,14 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
           N.cogs * S.cogs * N.rawCost[p.raw + 1] * (1 - 0.02 * co.depts.buy) * fx.cogsMult * modMult(p, 'cogs');
         let cogs = served * cogsU;
         if (N.spoil > 0) cogs += served * cogsU * Math.max(0.01, N.spoil * fx.spoilMult - 0.007 * co.depts.buy);
-        let costs = fixedCosts(p) + rev * ECO.acquiring;
+        const fixed = fixedCosts(p);
+        const acquiring = rev * ECO.acquiring;
+        let costs = fixed + acquiring;
+        let repair = 0;
         if (p.broken > 0) p.broken -= 1;
         else if (next(rng) < N.breakdown * (1 - 0.15 * co.depts.buy) * modMult(p, 'breakdown')) {
           p.broken = 1;
+          repair = N.repair;
           costs += N.repair;
         }
         const profit = rev - cogs - costs;
@@ -116,7 +128,11 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         p.loyal += (Math.max(0, Math.min(1, (sat - 35) / 45 + modAdd(p, 'loyal'))) - p.loyal) / 7;
         p.skill = Math.min(50 + 10 * co.depts.hr, p.skill + 0.8 + 0.3 * co.depts.hr);
         if (p.newDays > 0) p.newDays -= 1;
-        p.last = { demand, served, lost, qlost, util, q, s: srv, sat, rev, profit };
+        const wages = wagesOf(p);
+        p.last = {
+          demand, served, lost, qlost, util, q, s: srv, sat, rev, profit,
+          cogs, wages, rent: fixed - wages, acquiring, repair,
+        };
       }
     }
   }

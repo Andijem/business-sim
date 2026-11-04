@@ -3,6 +3,7 @@ export * from './state';
 export * from './actions';
 export * from './tick';
 export * from './cards';
-export { simulateDay, seasonOf, fixedCosts } from './market';
+export * from './forecast';
+export { simulateDay, seasonOf, fixedCosts, wagesOf } from './market';
 export { quality, service, unitPrice } from './formulas';
 export { NICHES, NICHE_IDS, VILLAGES, SEGS, seg, village, ECO, DEPTS } from './data';

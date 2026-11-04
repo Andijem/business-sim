@@ -70,3 +70,14 @@
 .balance button.pulse { animation: pulse 1.2s ease-in-out infinite; box-shadow: 0 0 0 3px #f0b429; }
 @keyframes pulse { 50% { box-shadow: 0 0 0 6px #f0b42966; } }
 @media (min-width: 700px) { .balance { left: auto; width: 520px; box-shadow: -4px 0 20px #0002; } }
+.balance .bar .cash button.em { display: block; margin: 0; padding: 0; color: #c9f2c7; font-size: 12px; text-decoration: none; text-align: left; }
+.balance .bar .cash button.em.neg { color: #ffc9c0; }
+.balance table.bd { width: 100%; border-collapse: collapse; }
+.balance table.bd td { padding: 5px 0; border-bottom: 1px solid #eee8da; vertical-align: top; }
+.balance table.bd td:last-child { text-align: right; font-weight: 700; white-space: nowrap; padding-left: 8px; }
+.balance table.bd td small { display: block; color: #8a857a; font-size: 11px; }
+.balance table.bd tr.sum td { border-bottom: 0; border-top: 2px solid #2a2a26; font-weight: 700; }
+.balance table.bd .neg { color: #a2412f; }
+.balance table.bd .pos { color: #23623a; }
+.balance details.why { margin: 4px 0; background: #f7f4ec; border-radius: 10px; padding: 6px 8px; }
+.balance details.why summary { cursor: pointer; color: #2f6f62; font-weight: 600; }

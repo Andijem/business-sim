@@ -31,6 +31,12 @@ export interface DayStats {
   sat: number;
   rev: number;
   profit: number;
+  /** Разбор расходов дня: товар, зарплаты, аренда с коммуналкой, эквайринг, ремонт. */
+  cogs: number;
+  wages: number;
+  rent: number;
+  acquiring: number;
+  repair: number;
 }
 
 export interface ManagerRules {

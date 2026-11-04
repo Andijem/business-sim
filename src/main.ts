@@ -5,7 +5,7 @@ import { setupWorld } from './scene/world';
 import { LotsView, type LotView } from './scene/lots';
 import { People } from './scene/people';
 import { slotOf, villageX } from './scene/layout';
-import { mountBalance } from './ui/balance';
+import { mountBalance, type Sheet } from './ui/balance';
 import { mountPlay } from './ui/play';
 import { NICHE_ICON } from './ui/icons';
 import { t, tk } from './i18n';
@@ -457,5 +457,5 @@ document.addEventListener('visibilitychange', () => {
 requestAnimationFrame(frame);
 // для автопроверок: поставить час и посмотреть состояние
 Object.assign(window, { __ready: true, __temka: { setHour: (h: number) => { hour = h; requestRender(); }, state: () => state, closeSheet: () => balance.close(), away: (sec: number) => awayFor(sec),
-  load: (code: string) => { const st = importCode(code); if (st) { state = st; persist(state); homeView(); } return !!st; },
+  endDay: () => closeDay(), sheet: (s: Sheet) => balance.open(s), load: (code: string) => { const st = importCode(code); if (st) { state = st; persist(state); homeView(); } return !!st; },
   fly: (id: string) => host.focusVillage(id) } });

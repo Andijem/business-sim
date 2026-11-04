@@ -15,6 +15,10 @@ export interface UpgradeEffects {
   flowMult?: number;
   rainFloor?: number;
   afterRainCap?: number;
+  /** Поток вне летнего сезона (курорт). */
+  offSeasonFlow?: number;
+  /** Доля торговли в шторм (рыба: коптильня продаёт вчерашний улов). */
+  stormFloor?: number;
 }
 
 export interface NicheDef {
@@ -38,6 +42,10 @@ export interface NicheDef {
   stockout: number;
   spoil: number;
   rawCost: number[];
+  /** Себестоимость по сезонам (ферма: летом изобилие, зимой дефицит). */
+  seasonCogs?: number[];
+  /** Погода: множитель потока в дождь, в сухой день и в шторм (дождь осенью и зимой). */
+  weather?: { rain: number; dry: number; storm?: number };
   upgrades: { id: string; effects: UpgradeEffects }[];
 }
 
@@ -63,6 +71,10 @@ export interface VillageDef {
   lots: Partial<Record<NicheId, number>>;
   traffic: Partial<Record<NicheId, number[]>>;
   unlocks: string | null;
+  /** Доли спроса эконом/средний/премиум летом (курорт), иначе общие деревенские. */
+  summerMix?: number[];
+  /** Точки Хваткина появляются, когда деревня открывается (деревни после v0.1). */
+  lateRival?: boolean;
 }
 
 export const NICHES = nichesJson as Record<NicheId, NicheDef>;

@@ -156,4 +156,4 @@ export function runStrategy(s: Strategy, days = 168, seed = 1, options: Partial<
 }
 
 /** Параметры сверки с моделью: всё, чего нет в sim.py, выключено. */
-export const MODEL_PARITY: Partial<GameOptions> = { cards: false, finance: false, rivalCloses: false };
+export const MODEL_PARITY: Partial<GameOptions> = { cards: false, finance: false, rivalCloses: false, villages: 2 };

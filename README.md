@@ -11,7 +11,7 @@
 
 ## Сайт
 
-Каждый пуш в `main` собирает игру и выкладывает её на GitHub Pages: https://andijem.github.io/business-sim/ (workflow `.github/workflows/pages.yml`). Один раз нужно включить: Settings → Pages → Source: **GitHub Actions**. С сайта игру можно поставить на телефон как приложение.
+Пока выключен: играем через `game.html` (`npm run html`). Workflow `.github/workflows/pages.yml` готов и запускается вручную; чтобы включить сайт, нужно в Settings → Pages выбрать Source: **GitHub Actions** и вернуть в workflow запуск на пуш в `main`.
 
 ## Полировка (этап 4)
 

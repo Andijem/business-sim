@@ -37,6 +37,8 @@ export function makePoint(st: GameState, niche: NicheId, v: VillageId, owner: Ow
     cutPrice: false,
     traffic: 1.0,
     newDays: 0,
+    handover: 0,
+    revenge: 0,
     closedDays: 0,
     profitEma: null,
     last: null,

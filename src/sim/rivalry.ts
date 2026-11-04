@@ -57,7 +57,7 @@ export function rivalry(st: GameState): Rivalry {
 }
 
 /** Ходы Хваткина и то, что с ним сделал игрок: для ленты «История Хваткина». */
-export const RIVAL_EVENTS = ['ev.rivalDump', 'ev.rivalSale', 'ev.rivalClosed', 'ev.rivalInvest', 'ev.buyout', 'ev.captured'];
+export const RIVAL_EVENTS = ['ev.rivalDump', 'ev.rivalRevenge', 'ev.rivalSale', 'ev.rivalClosed', 'ev.rivalInvest', 'ev.buyout', 'ev.captured'];
 const RIVAL_CARDS = ['rivalPromo', 'baristaPoach'];
 
 export function rivalHistory(st: GameState, limit = 12): GameEvent[] {

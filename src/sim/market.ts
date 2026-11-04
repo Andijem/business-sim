@@ -129,6 +129,11 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         p.loyal += (Math.max(0, Math.min(1, (sat - 35) / 45 + modAdd(p, 'loyal'))) - p.loyal) / 7;
         p.skill = Math.min(50 + 10 * co.depts.hr, p.skill + 0.8 + 0.3 * co.depts.hr);
         if (p.newDays > 0) p.newDays -= 1;
+        if (p.handover > 0) p.handover -= 1;
+        if (p.revenge > 0) {
+          p.revenge -= 1;
+          if (p.revenge === 0) p.priceIdx /= ECO.buyout.revengePrice;
+        }
         const wages = wagesOf(p);
         p.last = {
           demand, served, lost, qlost, util, q, s: srv, sat, rev, profit,

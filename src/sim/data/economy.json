@@ -7,7 +7,7 @@
   "tax": { "usn6": 0.06, "usn15": 0.15, "usn15Min": 0.01, "fineChance": 0.15, "finePerAcc": 0.04, "fineMult": 1.3, "usn15FineMultNoAcc2": 2 },
   "novelty": { "days": 7, "flow": 1.2 },
   "rival": { "dumpMult": 0.9, "deptCap": 3, "yearlyDepts": ["mkt", "hr"] },
-  "buyout": { "openShare": 0.5, "forSaleShare": 0.3, "profitDays": 10 },
+  "buyout": { "openShare": 1.0, "forSaleShare": 0.5, "profitDays": 20, "handoverDays": 3, "handoverService": 10, "repLoss": 0.5, "loyal": 0.2, "revengeDays": 14, "revengePrice": 0.9 },
   "formatChange": { "costShare": 0.5, "closedDays": 3 },
   "nicheUpgradeCost": [0.3, 0.6, 1.0],
   "manager": { "minHall": 2, "wageMult": 1.5 },

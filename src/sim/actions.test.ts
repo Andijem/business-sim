@@ -52,17 +52,29 @@ describe('действия игрока', () => {
     expect(buyNicheUpgrade(st, id)).toEqual({ ok: false, reason: 'hall' });
   });
 
-  it('выкуп точки Хваткина: 0,5 открытия + 10 дней прибыли, в эконом-формате', () => {
+  it('выкуп точки Хваткина: цена открытия + 20 дней прибыли, передача, Хваткин демпингует', () => {
     const st = fresh();
     for (let i = 0; i < 10; i++) advanceDay(st);
     const p = rival(st).points[0];
     const price = buyoutPrice(p);
-    expect(price).toBe(Math.round((60000 * 0.6 * 0.5 + 10 * Math.max(0, p.profitEma!)) / 1000) * 1000);
+    expect(price).toBe(Math.round((60000 * 0.6 * 1.0 + 20 * Math.max(0, p.profitEma!)) / 1000) * 1000);
+    const rep = p.rep;
+    const other = rival(st).points.find((r) => r !== p && r.village === p.village)!;
+    const otherPrice = other.priceIdx;
     player(st).cash = price;
     expect(buyout(st, p.id).ok).toBe(true);
     expect(p.owner).toBe(0);
     expect(p.seg).toBe(-1);
     expect(rival(st).points).not.toContain(p);
+    expect(p.rep).toBeCloseTo(Math.max(1, rep - 0.5));
+    expect(p.loyal).toBe(0.2);
+    expect(p.handover).toBe(3);
+    expect(other.priceIdx).toBeCloseTo(otherPrice * 0.9);
+    expect(other.revenge).toBe(14);
+    for (let i = 0; i < 14; i++) advanceDay(st);
+    expect(p.handover).toBe(0);
+    expect(other.revenge).toBe(0);
+    expect(other.priceIdx).toBeCloseTo(otherPrice);
   });
 
   it('смена формата: 50% цены нового формата, 3 дня закрыто', () => {

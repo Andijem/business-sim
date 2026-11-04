@@ -4,6 +4,7 @@ import { buildWorld } from './scene/village';
 import { setupWorld } from './scene/world';
 import { LotsView, type LotView } from './scene/lots';
 import { People } from './scene/people';
+import { Life } from './scene/life';
 import { slotOf, villageX } from './scene/layout';
 import { mountBalance, type Sheet } from './ui/balance';
 import { mountPlay } from './ui/play';
@@ -33,11 +34,15 @@ app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const world = setupWorld(scene);
-scene.add(buildWorld());
+const built = buildWorld();
+scene.add(built.group);
 const lots = new LotsView();
 scene.add(lots.group);
 const people = new People();
 scene.add(people.group);
+const lastPlace = built.places[built.places.length - 1];
+const life = new Life(built.places, [built.places[0].x - built.places[0].half, lastPlace.x + lastPlace.half]);
+scene.add(life.group);
 
 // ---------- игра ----------
 let state: GameState = newGame((Date.now() & 0x7fffffff) >>> 0);
@@ -281,6 +286,7 @@ function requestRender() { dirty = true; }
 let prev = performance.now();
 let uiTick = 0;
 let lastDraw = 0;
+let lastBuild = 0;
 function frame(now: number) {
   const dt = Math.min(0.1, (now - prev) / 1000);
   prev = now;
@@ -312,10 +318,14 @@ function frame(now: number) {
       play.update();
     }
   }
+  // мир достраивается: рядом с камерой — сразу, остальное — фоном по одному месту
+  if (built.ensure(goal.target.x, 90)) { renderer.shadowMap.needsUpdate = true; dirty = true; }
+  else if (!moving && now - lastBuild > 250 && built.step()) { lastBuild = now; dirty = true; }
   world.setHour(hour);
   const crowd = people.update(dt, gameHours, hour, lots.views.values());
+  const alive = life.update(dt, speed > 0 && !state.bankrupt, hour, cam.target.x);
   // пока идёт время, хватает 30 кадров в секунду: экономим батарею
-  const busy = speed > 0 || crowd;
+  const busy = speed > 0 || crowd || alive;
   if (dirty || moving || (busy && now - lastDraw > 32)) {
     lastDraw = now;
     if (moving || dirty || Math.abs(hour - shadowHour) > 0.15) {
@@ -456,6 +466,7 @@ document.addEventListener('visibilitychange', () => {
 });
 requestAnimationFrame(frame);
 // для автопроверок: поставить час и посмотреть состояние
-Object.assign(window, { __ready: true, __temka: { setHour: (h: number) => { hour = h; requestRender(); }, state: () => state, closeSheet: () => balance.close(), away: (sec: number) => awayFor(sec),
+Object.assign(window, { __ready: true, __temka: { setHour: (h: number) => { hour = h; requestRender(); }, state: () => state, life: () => life.stats(), closeSheet: () => balance.close(), away: (sec: number) => awayFor(sec),
   endDay: () => closeDay(), sheet: (s: Sheet) => balance.open(s), load: (code: string) => { const st = importCode(code); if (st) { state = st; persist(state); homeView(); } return !!st; },
-  fly: (id: string) => host.focusVillage(id) } });
+  fly: (id: string) => host.focusVillage(id),
+  cam: (dist: number, pitch: number, yaw: number) => { goal.dist = cam.dist = dist; goal.pitch = cam.pitch = pitch; goal.yaw = cam.yaw = yaw; requestRender(); } } });

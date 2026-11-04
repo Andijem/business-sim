@@ -1,11 +1,13 @@
 import * as THREE from 'three';
-import { MATS } from './voxels';
+import { PERSON_BODY, PERSON_HEAD } from './figures';
 import type { LotView } from './lots';
 import { slotOf, villageX } from './layout';
 
 const MAX = 160;
 const COLORS = [0x3b7fbf, 0xe8a84a, 0x7a5ea8, 0xd65a5a, 0x5a6a7a, 0x4f9a6a, 0xe2604a, 0x2b3340];
-const SPEED = 1.6; // метров в секунду реального времени
+const HAIR = [0x3a2a20, 0x5a3a2a, 0xd9b870, 0x2a2a2a, 0x8a5a3a];
+const SPEED = 1.6;
+const SIZE = new THREE.Vector3(1.35, 1.35, 1.35); // метров в секунду реального времени
 
 interface Agent {
   path: THREE.Vector3[];
@@ -13,6 +15,7 @@ interface Agent {
   t: number;
   wait: number;
   color: number;
+  hair: number;
 }
 
 /** Где у участка вход и по какой линии тротуара к нему идти. */
@@ -45,8 +48,9 @@ export class People {
   private seed = 1;
 
   constructor() {
-    this.body = new THREE.InstancedMesh(new THREE.BoxGeometry(0.25, 0.75, 0.25), MATS.solid, MAX);
-    this.head = new THREE.InstancedMesh(new THREE.BoxGeometry(0.25, 0.25, 0.25), MATS.solid, MAX);
+    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    this.body = new THREE.InstancedMesh(PERSON_BODY(), mat, MAX);
+    this.head = new THREE.InstancedMesh(PERSON_HEAD(), mat, MAX);
     this.body.count = this.head.count = 0;
     this.body.frustumCulled = this.head.frustumCulled = false;
     this.group.add(this.body, this.head);
@@ -76,7 +80,7 @@ export class People {
           const there = routeTo(v, this.rnd() < 0.5);
           const back = [...there].reverse();
           back[back.length - 1] = back[back.length - 1].clone().setX(back[back.length - 1].x * -1 + 2 * villageX(v.lot.village));
-          this.agents.push({ path: [...there, ...back.slice(1)], seg: 0, t: 0, wait: 0, color: COLORS[Math.floor(this.rnd() * COLORS.length)] });
+          this.agents.push({ path: [...there, ...back.slice(1)], seg: 0, t: 0, wait: 0, color: COLORS[Math.floor(this.rnd() * COLORS.length)], hair: HAIR[Math.floor(this.rnd() * HAIR.length)] });
         }
       }
     }
@@ -115,12 +119,11 @@ export class People {
       const A = a.path[a.seg], B = a.path[a.seg + 1];
       pos.copy(A).lerp(B, a.t);
       const bob = Math.abs(Math.sin((a.seg + a.t) * 9)) * 0.05;
-      this.m.makeTranslation(pos.x, 0.25 + 0.375 + bob, pos.z);
+      this.m.makeRotationY(Math.atan2(-(B.z - A.z), B.x - A.x)).scale(SIZE).setPosition(pos.x, 0.25 + bob, pos.z);
       this.body.setMatrixAt(n, this.m);
       this.body.setColorAt(n, this.c.setHex(a.color));
-      this.m.makeTranslation(pos.x, 0.25 + 0.75 + 0.125 + bob, pos.z);
       this.head.setMatrixAt(n, this.m);
-      this.head.setColorAt(n, this.c.setHex(0xf0c8a8));
+      this.head.setColorAt(n, this.c.setHex(a.hair));
       n++;
     }
     this.body.count = this.head.count = n;

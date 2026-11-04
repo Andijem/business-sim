@@ -27,10 +27,13 @@ export const MATS = {
   glow: new THREE.MeshBasicMaterial({ color: 0xffffff }),
 };
 const GEO = new THREE.BoxGeometry(0.25, 0.25, 0.25);
+const UNIT = new THREE.BoxGeometry(1, 1, 1);
 
 export class VoxelStore {
   readonly solid = new Map<number, [number, number, number, number]>();
   readonly glow = new Map<number, [number, number, number, number]>();
+  /** Крупные гладкие коробки (вода, башни, горы): одна инстанция вместо тысяч вокселей. */
+  readonly blocks: { x0: number; y0: number; z0: number; x1: number; y1: number; z1: number; c: number; glow: boolean }[] = [];
 
   put(i: number, j: number, k: number, c: number | null) {
     if (c == null) return;
@@ -61,6 +64,15 @@ export class VoxelStore {
           if (glow) this.putGlow(i, j, k, col);
           else this.put(i, j, k, col);
         }
+  }
+  /** Гладкая коробка в мировых координатах: дёшево для больших плоскостей. */
+  block(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, c: number, glow = false) {
+    if (x1 <= x0 || y1 <= y0 || z1 <= z0) return;
+    this.blocks.push({ x0, y0, z0, x1, y1, z1, c, glow });
+  }
+  /** Сколько инстансов уйдёт в кадр: для проверки бюджета на телефоне. */
+  count(): number {
+    return this.visibleSolid().length + this.glow.size + this.blocks.length;
   }
   clear(x0: number, y0: number, z0: number, x1: number, y1: number, z1: number) {
     for (let i = vi(x0); i < vi(x1); i++)
@@ -106,6 +118,19 @@ export class VoxelStore {
     const solid = this.visibleSolid();
     if (solid.length) make(solid, MATS.solid, true);
     if (this.glow.size) make([...this.glow.values()], MATS.glow, false);
+    for (const glow of [false, true]) {
+      const list = this.blocks.filter((b) => b.glow === glow);
+      if (!list.length) continue;
+      const mesh = new THREE.InstancedMesh(UNIT, glow ? MATS.glow : MATS.solid, list.length);
+      const m4 = new THREE.Matrix4(), col = new THREE.Color();
+      list.forEach((b, n) => {
+        m4.makeScale(b.x1 - b.x0, b.y1 - b.y0, b.z1 - b.z0).setPosition((b.x0 + b.x1) / 2, (b.y0 + b.y1) / 2, (b.z0 + b.z1) / 2);
+        mesh.setMatrixAt(n, m4);
+        mesh.setColorAt(n, col.setHex(b.c));
+      });
+      mesh.castShadow = mesh.receiveShadow = !glow;
+      group.add(mesh);
+    }
     return group;
   }
 }

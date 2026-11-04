@@ -45,16 +45,26 @@ function sign(s: VoxelStore, x0: number, x1: number, y: number, z: number, c: nu
   for (let i = vi(x0 + 0.25); i < vi(x1 - 0.25); i++) if (i % 2 === 0) s.put(i, vi(y + 0.25), vi(z) - 1, 0xfaf2e6);
 }
 
-/** Пустой участок: земля, низкий забор и табличка «Сдаётся». */
+/** Пустой участок: стриженый газон, столбики с цепью по углам, кусты и табличка «Сдаётся». */
 function freeLot(b: VoxelStore) {
-  b.fill(0.25, 0, 0.25, PLOT - 0.25, 0.25, PLOT - 0.25, (i, _j, k) => (hash(i, 7, k) > 0.85 ? 0x93bb60 : 0xb59a73));
-  for (let x = 0.25; x < PLOT; x += 1) {
-    b.fill(x, 0.25, 0.25, x + 0.25, 1, 0.5, WOOD);
-    b.fill(x, 0.25, PLOT - 0.5, x + 0.25, 1, PLOT - 0.25, WOOD);
+  b.fill(0.25, 0, 0.25, PLOT - 0.25, 0.25, PLOT - 0.25, (i, _j, k) => {
+    const n = hash(i, 7, k);
+    return n > 0.93 ? 0xb59a73 : Math.floor(i / 2) % 2 ? 0xa6cc72 : 0x9cc46a;
+  });
+  // дорожка от тротуара к табличке
+  b.fill(3, 0, PLOT - 2, 4, 0.25, PLOT - 0.25, 0xd8c8a8);
+  for (const [x, z] of [[0.25, 0.25], [PLOT - 0.5, 0.25], [0.25, PLOT - 0.5], [PLOT - 0.5, PLOT - 0.5]]) b.fill(x, 0.25, z, x + 0.25, 1, z + 0.25, 0x8a8a92);
+  for (let x = 0.5; x < PLOT - 0.5; x += 0.5) {
+    const sag = Math.sin(((x - 0.25) / (PLOT - 0.75)) * Math.PI) * 0.25;
+    b.put(vi(x), vi(0.75 - sag), vi(0.25), 0x6a6a72);
+    b.put(vi(x), vi(0.75 - sag), vi(PLOT - 0.5), 0x6a6a72);
+    b.put(vi(0.25), vi(0.75 - sag), vi(x), 0x6a6a72);
+    b.put(vi(PLOT - 0.5), vi(0.75 - sag), vi(x), 0x6a6a72);
   }
-  for (let z = 0.25; z < PLOT; z += 1) {
-    b.fill(0.25, 0.25, z, 0.5, 1, z + 0.25, WOOD);
-    b.fill(PLOT - 0.5, 0.25, z, PLOT - 0.25, 1, z + 0.25, WOOD);
+  for (const [x, z] of [[1.25, 1.5], [5.5, 2], [1.5, 4.5]]) {
+    const cx = vi(x), cz = vi(z);
+    for (let i = -2; i <= 2; i++) for (let j = 1; j <= 3; j++) for (let k = -2; k <= 2; k++)
+      if (Math.hypot(i, j - 1.5, k) + hash(cx + i, j, cz + k) * 0.6 < 2.3) b.put(cx + i, j, cz + k, hash(cx + i, j, cz + k) > 0.5 ? 0x6f9a5a : 0x7fab63);
   }
   b.fill(3.25, 0.25, PLOT - 1.25, 3.5, 1.75, PLOT - 1, WOOD);
   b.fill(2.25, 1.25, PLOT - 1.25, 4.5, 2.25, PLOT - 1, 0xfaf2e6);

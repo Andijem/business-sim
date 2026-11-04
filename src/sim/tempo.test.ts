@@ -10,11 +10,12 @@ const runs = (key: string, opts = {}) => Array.from({ length: SEEDS }, (_, s) =>
 
 describe('темп из документа баланса', () => {
   const smart = runs('smart', MODEL_PARITY);
-  it('средний формат берёт Копеечкино около 58-го дня, Барыши около 113-го', () => {
-    expect(median(smart.map((r) => r.captured.kopeechkino ?? 999))).toBeGreaterThanOrEqual(48);
-    expect(median(smart.map((r) => r.captured.kopeechkino ?? 999))).toBeLessThanOrEqual(66);
+  // выкуп подорожал (решение FAJI 04.11): Копеечкино примерно на 2 недели позже
+  it('средний формат берёт Копеечкино около 67-го дня, Барыши около 115-го', () => {
+    expect(median(smart.map((r) => r.captured.kopeechkino ?? 999))).toBeGreaterThanOrEqual(56);
+    expect(median(smart.map((r) => r.captured.kopeechkino ?? 999))).toBeLessThanOrEqual(74);
     expect(median(smart.map((r) => r.captured.barysh ?? 999))).toBeGreaterThanOrEqual(100);
-    expect(median(smart.map((r) => r.captured.barysh ?? 999))).toBeLessThanOrEqual(126);
+    expect(median(smart.map((r) => r.captured.barysh ?? 999))).toBeLessThanOrEqual(125);
   });
   it('эконом быстрее среднего, премиум медленнее', () => {
     const econ = median(runs('econ', MODEL_PARITY).map((r) => r.captured.kopeechkino ?? 999));
@@ -44,7 +45,7 @@ describe('100 дней в полной игре (карточки, налоги,
 });
 
 describe('осторожная игра стоит 10–15% темпа (решение FAJI)', () => {
-  it('smart с осторожными ответами: Копеечкино ≤ 64, Барыши ≤ 125', () => {
+  it('smart с осторожными ответами: Копеечкино ≤ 80, Барыши ≤ 130', () => {
     const k: number[] = [], b: number[] = [];
     for (let seed = 0; seed < SEEDS; seed++) {
       const s = STRATEGIES.smart;
@@ -61,7 +62,7 @@ describe('осторожная игра стоит 10–15% темпа (реше
       k.push(st.captured.kopeechkino ?? 999);
       b.push(st.captured.barysh ?? 999);
     }
-    expect(median(k)).toBeLessThanOrEqual(64);
-    expect(median(b)).toBeLessThanOrEqual(125);
+    expect(median(k)).toBeLessThanOrEqual(80);
+    expect(median(b)).toBeLessThanOrEqual(130);
   });
 });

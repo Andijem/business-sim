@@ -3,6 +3,8 @@ import { DEPTS, ECO, VILLAGES, forecast, rivalry, seasonOf } from '../sim';
 import type { GameState, NicheId } from '../sim';
 import type { BalanceScreen, Sheet } from './balance';
 import { nextHint, type Hint } from './tutorial';
+import { getMeta } from '../meta/store';
+import { timeMult } from '../meta/coins';
 import './play.css';
 
 const money = (x: number) => Math.round(x).toLocaleString('ru-RU');
@@ -27,6 +29,10 @@ export interface PlayHost {
 
 export interface PlayScreen {
   update(): void;
+  /** Короткое сообщение поверх сцены (монетки, достижения). */
+  toast(text: string): void;
+  /** Монетки летят к чипу кассы; bad — касса покачивается. */
+  dayFx(profit: number): void;
   /** Подписи над участками: позиции считает сцена. */
   pins: HTMLElement;
 }
@@ -103,9 +109,10 @@ export function mountPlay(root: HTMLElement, host: PlayHost): PlayScreen {
       ${villages.length > 1 ? `<div class="vtabs">${villages.map((v) => `<button class="${v.id === host.village() ? 'on' : ''}" data-a="village" data-v="${v.id}">${tk(`village.${v.id}`)}</button>`).join('')}</div>` : ''}
       <div class="side">
         <button data-a="speed" class="${sp === 0 ? 'on' : ''}" title="${t('play.pause')}">${sp === 0 ? '▶' : '⏸'}</button>
-        <button data-a="fast" class="${sp > 1 ? 'on' : ''}">×${sp > 1 ? 3 : 1}</button>
+        <button data-a="fast" class="${sp > 1 ? 'on' : ''}">×${(sp > 1 ? 3 : 1) * timeMult(getMeta(), Date.now())}</button>
         <button data-a="skip" class="${hint?.target === 'skip' ? 'pulse' : ''}" title="${t('play.skip')}">⏭</button>
         <button data-a="depts" class="${hint?.target === 'dept' ? 'pulse' : ''}">🏢</button>
+        <button data-a="shop" class="coins">🪙<small>${getMeta().coins}</small></button>
         <button data-a="full">📊</button>
         <button data-a="help">❓</button>
       </div>
@@ -144,6 +151,7 @@ export function mountPlay(root: HTMLElement, host: PlayHost): PlayScreen {
       }
       case 'depts': host.balance.open({ kind: 'depts' }); break;
       case 'full': host.balance.open({ kind: 'full' }); break;
+      case 'shop': host.balance.open({ kind: 'shop' }); break;
       case 'help': host.balance.open({ kind: 'help' }); break;
       case 'speed': host.setSpeed(host.speed() === 0 ? 1 : 0); break;
       case 'fast': host.setSpeed(host.speed() > 1 ? 1 : 3); break;
@@ -170,9 +178,56 @@ export function mountPlay(root: HTMLElement, host: PlayHost): PlayScreen {
     render();
   });
 
+  const fx = document.createElement('div');
+  fx.className = 'fxlayer';
+  root.appendChild(fx);
+  let toastTimer = 0;
+  function toast(text: string) {
+    let tEl = fx.querySelector<HTMLElement>('.ptoast');
+    if (!tEl) {
+      tEl = document.createElement('div');
+      tEl.className = 'ptoast';
+      fx.appendChild(tEl);
+    }
+    tEl.textContent = text;
+    tEl.classList.remove('show');
+    void tEl.offsetWidth;
+    tEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => tEl!.classList.remove('show'), 3200);
+  }
+  function dayFx(profit: number) {
+    const chip = el.querySelector<HTMLElement>('.chip.cash');
+    if (!chip) return;
+    if (profit < 0) {
+      chip.classList.remove('shake');
+      void chip.offsetWidth;
+      chip.classList.add('shake');
+      return;
+    }
+    const to = chip.getBoundingClientRect();
+    const n = Math.min(8, 3 + Math.floor(Math.log10(Math.max(10, profit))));
+    for (let i = 0; i < n; i++) {
+      const c = document.createElement('i');
+      c.className = 'flycoin';
+      c.textContent = 'Б';
+      const x0 = innerWidth / 2 + (Math.random() - 0.5) * 120, y0 = innerHeight * 0.55 + (Math.random() - 0.5) * 80;
+      c.style.left = `${x0}px`;
+      c.style.top = `${y0}px`;
+      c.style.setProperty('--dx', `${to.left + 24 - x0}px`);
+      c.style.setProperty('--dy', `${to.top + 16 - y0}px`);
+      c.style.animationDelay = `${i * 70}ms`;
+      fx.appendChild(c);
+      setTimeout(() => c.remove(), 1200 + i * 70);
+    }
+    setTimeout(() => { chip.classList.remove('bump'); void chip.offsetWidth; chip.classList.add('bump'); }, 800);
+  }
+
   return {
     update: render,
     pins,
+    toast,
+    dayFx,
   };
 }
 

@@ -49,6 +49,7 @@ export function quality(p: Point, co: Company): number {
 export function service(p: Point, co: Company, util: number): number {
   let s = 20 + 0.6 * p.skill + 5 * co.depts.hr + (util < 0.6 ? 6 : 0);
   if (util > 0.85) s -= (util - 0.85) * 120;
+  if (p.handover > 0) s -= ECO.buyout.handoverService;
   s += modAdd(p, 'service');
   return Math.max(0, Math.min(100, s));
 }

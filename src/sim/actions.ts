@@ -130,7 +130,7 @@ export function buyDept(st: GameState, d: DeptId): Result {
   return OK;
 }
 
-/** Цена выкупа точки Хваткина: 0,5 (или 0,3 на продаже) цены открытия + 10 дней её прибыли. */
+/** Цена выкупа точки Хваткина: цена открытия (половина, если на продаже) + 20 дней её прибыли. */
 export function buyoutPrice(p: Point): number {
   const b = ECO.buyout;
   const base = NICHES[p.niche].openCost * seg(p.seg).open * (p.forSale ? b.forSaleShare : b.openShare);
@@ -161,6 +161,20 @@ export function buyout(st: GameState, id: number, o: { priceIdx?: number; raw?: 
   p.forSaleUntil = -1;
   if (o.priceIdx != null) p.priceIdx = o.priceIdx;
   if (o.raw != null) p.raw = o.raw;
+  // Выкуп — обдуманный ход (решение FAJI): передача, часть гостей уходит, Хваткин демпингует.
+  const b = ECO.buyout;
+  p.rep = Math.max(1, p.rep - b.repLoss);
+  p.satEma = 25 + ((p.rep - 1) / 4) * 55;
+  p.loyal = b.loyal;
+  p.handover = b.handoverDays;
+  p.revenge = 0;
+  for (const r of rv) {
+    if (r.village === p.village && r.revenge <= 0) {
+      r.priceIdx *= b.revengePrice;
+      r.revenge = b.revengeDays;
+      log(st, 'ev.rivalRevenge', { niche: r.niche, village: r.village, days: b.revengeDays });
+    }
+  }
   co.points.push(p);
   log(st, 'ev.buyout', { niche: p.niche, village: p.village, price });
   return OK;

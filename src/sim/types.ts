@@ -77,6 +77,10 @@ export interface Point {
   cutPrice: boolean;
   traffic: number;
   newDays: number;
+  /** Дни передачи после выкупа: новый хозяин привыкает, сервис ниже. */
+  handover: number;
+  /** Дни демпинга Хваткина после выкупа его точки в этой деревне (цена ×0,9). */
+  revenge: number;
   closedDays: number;
   profitEma: number | null;
   last: DayStats | null;

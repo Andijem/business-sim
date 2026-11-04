@@ -9,7 +9,10 @@ import { slotOf, villageX } from './scene/layout';
 import { mountBalance } from './ui/balance';
 import { mountPlay } from './ui/play';
 import { t, tk } from './i18n';
-import { catchUp, endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
+import { OFFLINE_MAX_DAYS, catchUp, endDay, finishDay, newGame, type GameState, type NicheId } from './sim';
+import { checkAchievements, dailyLogin, offlineMax, timeMult } from './meta/coins';
+import { getMeta, loadMetaNow, saveMetaNow } from './meta/store';
+import { buzz, initSound, sfx } from './ui/sound';
 import { loadGame, saveGame } from './save/idb';
 import { exportCode, importCode } from './save/code';
 
@@ -49,10 +52,25 @@ let speed = location.hash.includes('pause') ? 0 : 1;
 let resumeSpeed = 1;
 
 function persist(st: GameState) {
-  if (lots.sync(st)) syncPins();
+  if (lots.sync(st)) {
+    syncPins();
+    if (!dayClosing) sfx('up');
+  }
+  rewards(st);
   play.update();
   requestRender();
   saveGame(st).catch(() => {});
+}
+
+/** Достижения дают монетки: показываем и сохраняем. */
+let metaReady = false;
+function rewards(st: GameState) {
+  if (!metaReady) return;
+  const got = checkAchievements(st, getMeta());
+  if (!got.length) return;
+  saveMetaNow();
+  for (const a of got) play.toast(t('shop.got', { name: tk(`ach.${a.id}`), n: a.coins }));
+  sfx('coin');
 }
 
 const balance = mountBalance(
@@ -104,14 +122,24 @@ balance.open = (s) => {
 /** Конец дня: рынок считает день, утром новые карточки. Потом итоги. */
 /** Деревня, к которой подлететь после итогов дня (только что открылась дорога). */
 let flyTo: string | null = null;
+let dayClosing = false;
 function closeDay() {
   if (state.bankrupt) return;
   const open0 = state.unlocked.length;
+  const caught0 = Object.keys(state.captured).length;
+  const cash0 = state.companies[0].cash;
   endDay(state);
   finishDay(state);
   if (state.unlocked.length > open0) flyTo = state.unlocked[state.unlocked.length - 1];
   hour = DAY_START;
+  dayClosing = true;
   persist(state);
+  dayClosing = false;
+  const delta = state.companies[0].cash - cash0;
+  play.dayFx(delta);
+  if (Object.keys(state.captured).length > caught0) { sfx('win'); buzz([60, 40, 60, 40, 120]); }
+  else if (delta < 0) { sfx('bad'); buzz(80); }
+  else sfx('coin');
   balance.open({ kind: 'summary' });
 }
 
@@ -250,7 +278,7 @@ let lastDraw = 0;
 function frame(now: number) {
   const dt = Math.min(0.1, (now - prev) / 1000);
   prev = now;
-  let moving = false;
+  let moving = lots.animate(now);
   // плавный полёт камеры
   const k = 1 - Math.pow(0.002, dt);
   const want = balance.isOpen() ? 0.27 : 0;
@@ -269,7 +297,7 @@ function frame(now: number) {
   // время
   let gameHours = 0;
   if (speed > 0 && !state.bankrupt) {
-    gameHours = (dt * speed * (DAY_END - DAY_START)) / DAY_SEC;
+    gameHours = (dt * speed * timeMult(getMeta(), Date.now()) * (DAY_END - DAY_START)) / DAY_SEC;
     hour += gameHours;
     if (hour >= DAY_END) closeDay();
     uiTick += dt;
@@ -375,12 +403,31 @@ play.update();
 /** Пока игры не было на экране, дни шли сами: догоняем и показываем, что случилось. */
 function awayFor(sec: number) {
   const day0 = state.day, cash0 = state.companies[0].cash;
-  const days = catchUp(state, sec);
+  const max = offlineMax(getMeta(), Date.now(), OFFLINE_MAX_DAYS);
+  const days = catchUp(state, sec, undefined, max);
   if (!days) return;
   hour = DAY_START;
   persist(state);
-  balance.open({ kind: 'away', days, day0, cash0 });
+  balance.open({ kind: 'away', days, day0, cash0, max });
 }
+initSound();
+// iPhone: Safari может стереть данные сайта, если игра не на экране «Домой» — напоминаем один раз
+{
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const standalone = (navigator as unknown as { standalone?: boolean }).standalone || matchMedia('(display-mode: standalone)').matches;
+  let seen = false;
+  try { seen = localStorage.getItem('temka.a2hs') === '1'; localStorage.setItem('temka.a2hs', '1'); } catch { /* приватный режим */ }
+  if (ios && !standalone && !seen) setTimeout(() => play.toast(t('ui.a2hs')), 4000);
+}
+/** Монетки: ежедневный вход и достижения, которые уже есть в сохранении. */
+loadMetaNow().then((m) => {
+  metaReady = true;
+  const n = dailyLogin(m, new Date());
+  saveMetaNow();
+  if (n) play.toast(t('shop.daily', { n }));
+  rewards(state);
+  play.update();
+});
 loadGame().then((saved) => {
   if (saved) {
     state = saved.state;
@@ -397,6 +444,8 @@ document.addEventListener('visibilitychange', () => {
   } else if (hiddenAt) {
     awayFor((Date.now() - hiddenAt) / 1000);
     hiddenAt = 0;
+    const n = metaReady ? dailyLogin(getMeta(), new Date()) : 0;
+    if (n) { saveMetaNow(); play.toast(t('shop.daily', { n })); play.update(); }
   }
 });
 requestAnimationFrame(frame);

@@ -70,6 +70,8 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: 'dolzhkovo', coins: 150, done: (st) => 'dolzhkovo' in st.captured },
   { id: 'center', coins: 250, done: (st) => 'capitalCity' in st.captured },
   { id: 'ring2', coins: 400, done: (st) => ['kupechesky', 'capitalCity', 'vokzalny', 'technopark'].every((v) => v in st.captured) },
+  { id: 'ring3', coins: 500, done: (st) => ['embankment', 'slopes', 'marina', 'pineHills'].every((v) => v in st.captured) },
+  { id: 'victory', coins: 1000, done: (st) => st.wonDay != null },
 ];
 
 /** Новые достижения: отмечает их и начисляет монетки. */

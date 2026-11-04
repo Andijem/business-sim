@@ -51,7 +51,7 @@ export function simulateDay(st: GameState): { rain: boolean; afterRain: boolean 
         p.closedDays -= 1;
       }
       if (!open.length) continue;
-      let mult = N.season[season] * N.weekday[wd] * (V.seasonFlow ? V.seasonFlow[season] : 1) * (V.weekdayFlow ? V.weekdayFlow[wd] : 1);
+      let mult = (V.ownSeason ? 1 : N.season[season]) * N.weekday[wd] * (V.seasonFlow ? V.seasonFlow[season] : 1) * (V.weekdayFlow ? V.weekdayFlow[wd] : 1);
       const weather = niche === 'wash' ? (rain ? 0.45 : afterRain ? 1.6 : 1.0) : 1.0;
       if (niche === 'wash') mult *= weather;
       // Погода у курорта и рыбы: дождь, сухо, шторм (дождь осенью и зимой).

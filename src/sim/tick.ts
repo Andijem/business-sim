@@ -24,6 +24,12 @@ export function checkCapture(st: GameState) {
     if (ok) {
       st.captured[V.id] = st.day;
       log(st, 'ev.captured', { village: V.id });
+      // Финал: все ниши во всех деревнях и районах (GDD), «Всё схвачено» продаёт игроку вывеску.
+      const all = VILLAGES.slice(0, st.options.villages ?? VILLAGES.length);
+      if (st.wonDay == null && all.every((x) => x.id in st.captured)) {
+        st.wonDay = st.day;
+        log(st, 'ev.victory', { day: st.day });
+      }
       const limit = st.options.villages ?? VILLAGES.length;
       const nextIdx = VILLAGES.findIndex((x) => x.id === V.unlocks);
       if (V.unlocks && !st.unlocked.includes(V.unlocks) && nextIdx < limit) {

@@ -390,9 +390,13 @@ export function mountBalance(
     const hint = hints ? nextHint(st) : null;
     const won = st.events.filter((e) => e.day === st.day - 1 && e.key === 'ev.captured');
     const opened = st.events.filter((e) => e.day === st.day - 1 && e.key === 'ev.unlocked');
-    const win = won.map((e) => `<div class="win">🎉 ${t('ui.sum.captured', { village: tk(`village.${e.params?.village}`) })}
+    const win = won.map((e) => `<div class="win">🎉 ${t(VILLAGES.find((v) => v.id === e.params?.village)?.city ? 'ui.sum.capturedCity' : 'ui.sum.captured', { village: tk(`village.${e.params?.village}`) })}
       ${opened.map((o) => `<div>${tk(VILLAGES.find((v) => v.id === o.params?.village)?.city ? 'ui.sum.unlockedCity' : 'ui.sum.unlocked', { village: tk(`village.${o.params?.village}`) })}</div>`).join('')}</div>`).join('');
-    return `${win}<h3>${t('ui.sum.title', { day: st.day })}</h3>
+    const victory = st.events.some((e) => e.day === st.day - 1 && e.key === 'ev.victory')
+      ? `<div class="win victory"><h3>${t('ui.win.title')}</h3><p>${t('ui.win.text')}</p>
+        <div class="vsign">ООО «Всё схвачено»</div><small>${t('ui.win.sign')}</small>
+        <div>${t('ui.win.stats', { days: st.day, points: me.points.length, cash: Math.round(me.cash).toLocaleString('ru-RU') })}</div></div>` : '';
+    return `${victory}${win}<h3>${t('ui.sum.title', { day: st.day })}</h3>
       <div class="panel"><div class="big">${t('ui.sum.guests', { served: Math.round(served), lost: Math.round(lost) })}</div>
       ${bdTable(yesterday(st), false)}</div>
       ${evs ? `<div class="panel">${evs}</div>` : ''}

@@ -208,3 +208,39 @@ describe('v0.5: кольцо 2 Капитальска', () => {
     expect(play(true).last).toBeLessThanOrEqual(625);
   }, 300_000);
 });
+
+describe('v1.0: кольцо 3 и победа', () => {
+  const DAYS = 820;
+  const SEEDS10 = 12;
+  const play = (cautious: boolean) => {
+    const a: number[] = [], w: number[] = [];
+    for (let seed = 0; seed < SEEDS10; seed++) {
+      const s = STRATEGIES.smart;
+      const st = newGame(seed, { cards: cautious }, s.first ?? {});
+      for (let day = 0; day < DAYS && !st.bankrupt; day++) {
+        endDay(st);
+        for (const pc of [...st.pending]) {
+          const c = cardDef(pc.card);
+          resolveCard(st, pc.uid, (c.options.find((o) => o.cautious) ?? c.options[0]).id);
+        }
+        s.act(st);
+        finishDay(st);
+      }
+      if (!cautious) expect(st.bankrupt).toBe(false);
+      if (st.wonDay != null) expect(st.wonDay).toBe(st.captured.pineHills);
+      a.push(st.captured.embankment ?? 999);
+      w.push(st.wonDay ?? 999);
+    }
+    return { first: median(a), won: median(w) };
+  };
+  it('smart без карточек: Набережная около 623-го дня, победа около 729-го', () => {
+    const r = play(false);
+    expect(r.first).toBeGreaterThanOrEqual(600);
+    expect(r.first).toBeLessThanOrEqual(645);
+    expect(r.won).toBeGreaterThanOrEqual(700);
+    expect(r.won).toBeLessThanOrEqual(760);
+  }, 600_000);
+  it('smart с осторожными ответами: победа ≤ 780', () => {
+    expect(play(true).won).toBeLessThanOrEqual(780);
+  }, 600_000);
+});

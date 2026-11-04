@@ -2,7 +2,7 @@ import { t, tk } from '../i18n';
 import {
   DEPTS, ECO, NICHES, VILLAGES, buyDept, buyNicheUpgrade, buyout, buyoutPrice, cardDef, changeFormat, countPoints,
   deptCap, endDay, finishDay, fire, fixedCosts, forecast, freeLot, yesterday, hallPrice, hire, loanLimit, nicheUpgradePrice, openPoint,
-  openPrice, overdraftLimit, repFlow, rivalHistory, rivalry, repFromSat, seg, resolveCard, seasonOf, setManager, setPrice, setRaw, setUsn, takeLoan, upgradeHall,
+  OFFLINE_MAX_DAYS, openPrice, overdraftLimit, repFlow, rivalHistory, rivalry, repFromSat, seg, resolveCard, seasonOf, setManager, setPrice, setRaw, setUsn, takeLoan, upgradeHall,
 } from '../sim';
 import type { GameEvent, GameState, NicheId, Point, Raw, Result, Seg } from '../sim';
 import { makeSmart } from '../sim/strategies';
@@ -53,7 +53,8 @@ export type Sheet =
   | { kind: 'summary' }
   | { kind: 'money' }
   | { kind: 'manage' }
-  | { kind: 'help' };
+  | { kind: 'help' }
+  | { kind: 'away'; days: number; day0: number; cash0: number };
 
 export interface BalanceScreen {
   open(sheet?: Sheet): void;
@@ -375,7 +376,11 @@ export function mountBalance(
     const evs = st.events.filter((e) => e.day === st.day - 1 && !e.key.startsWith('ev.card'))
       .map((e) => `<div class="ev">${eventText(e)}</div>`).join('');
     const hint = hints ? nextHint(st) : null;
-    return `<h3>${t('ui.sum.title', { day: st.day })}</h3>
+    const won = st.events.filter((e) => e.day === st.day - 1 && e.key === 'ev.captured');
+    const opened = st.events.filter((e) => e.day === st.day - 1 && e.key === 'ev.unlocked');
+    const win = won.map((e) => `<div class="win">🎉 ${t('ui.sum.captured', { village: tk(`village.${e.params?.village}`) })}
+      ${opened.map((o) => `<div>${t('ui.sum.unlocked', { village: tk(`village.${o.params?.village}`) })}</div>`).join('')}</div>`).join('');
+    return `${win}<h3>${t('ui.sum.title', { day: st.day })}</h3>
       <div class="panel"><div class="big">${t('ui.sum.guests', { served: Math.round(served), lost: Math.round(lost) })}</div>
       ${bdTable(yesterday(st), false)}</div>
       ${evs ? `<div class="panel">${evs}</div>` : ''}
@@ -405,6 +410,19 @@ export function mountBalance(
       case 'summary': return summaryHtml(st);
       case 'money': return moneyTab(st);
       case 'manage': return manageTab(st);
+      case 'away': {
+        const { days, day0, cash0 } = sheet;
+        const evs = st.events.filter((e) => e.day >= day0 && !['ev.cardNew', 'ev.tax'].includes(e.key));
+        const auto = evs.filter((e) => e.key === 'ev.cardAuto' || e.key === 'ev.managerCard').length;
+        const shown = evs.filter((e) => e.key !== 'ev.cardAuto').slice(-12).map((e) => `<div class="ev"><span>${e.day + 1}</span> ${eventText(e)}</div>`).join('');
+        return `<h3>${t('ui.away.title')}</h3><div class="panel">
+          <div class="big">${t('ui.away.days', { days })}</div>
+          <div>${t('ui.away.cash', { from: money(cash0), to: money(me.cash), delta: signed(me.cash - cash0) })}</div>
+          ${auto ? `<small class="muted">${t('ui.away.cards', { n: auto })}</small>` : ''}</div>
+          ${shown ? `<div class="panel">${shown}</div>` : ''}
+          <small class="muted">${t('ui.away.note', { max: OFFLINE_MAX_DAYS })}</small>
+          <div class="btns"><button data-a="close">${t('ui.sum.next')}</button></div>`;
+      }
       case 'help': return `<h3>${t('tut.help')}</h3><div class="panel">${t('tut.scene.help')}</div><div class="panel">${t('tut.helpText')}</div>
         <div class="btns"><button class="ghost" data-a="hints">${hints ? t('tut.hide') : t('tut.show')}</button></div>`;
       default: return '';

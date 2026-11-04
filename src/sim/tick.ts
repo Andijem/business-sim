@@ -176,3 +176,11 @@ export function advanceDay(st: GameState) {
   endDay(st);
   finishDay(st);
 }
+
+/** Офлайн-прогресс: пока игра закрыта, дни идут сами (автопилот), но не больше лимита. */
+export const OFFLINE_MAX_DAYS = 7;
+export function catchUp(st: GameState, awaySec: number, daySec: number, maxDays = OFFLINE_MAX_DAYS): number {
+  const days = Math.max(0, Math.min(maxDays, Math.floor(awaySec / daySec)));
+  for (let i = 0; i < days && !st.bankrupt; i++) advanceDay(st);
+  return days;
+}

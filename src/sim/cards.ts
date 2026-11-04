@@ -2,6 +2,7 @@ import cardsJson from './data/cards.json';
 import { ECO } from './data';
 import { findPoint, log } from './actions';
 import { quality } from './formulas';
+import { seasonOf } from './market';
 import { int, next } from './rng';
 import type { GameState, ManagerRules, Mod, NicheId, Point } from './types';
 
@@ -30,6 +31,8 @@ export interface CardDef {
   cooldown: number;
   minDay: number;
   needsRival?: boolean;
+  /** Сезоны, когда карточка может выпасть: 0 весна, 1 лето, 2 осень, 3 зима. */
+  seasons?: number[];
   options: CardOption[];
 }
 
@@ -127,6 +130,7 @@ export function runScheduled(st: GameState) {
 function eligible(st: GameState, c: CardDef): Point[] {
   if (st.day < c.minDay || (st.cardCooldown[c.id] ?? -1) > st.day) return [];
   if (st.pending.some((x) => x.card === c.id)) return [];
+  if (c.seasons && !c.seasons.includes(seasonOf(st.day))) return [];
   return st.companies[0].points.filter(
     (p) =>
       (c.niche == null || p.niche === c.niche) &&

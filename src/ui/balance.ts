@@ -61,6 +61,9 @@ export function mountBalance(
   el.className = 'balance hidden';
   root.appendChild(el);
   let toast = '';
+  /** Окно в «Инструментах»: системные confirm/prompt в просмотрщиках HTML заблокированы. */
+  let dialog: '' | 'new' | 'export' | 'import' = '';
+  let dialogErr = false;
   let help = false;
   let tab: Tab = 'points';
   const smart = makeSmart();
@@ -241,6 +244,19 @@ export function mountBalance(
         <h4>${t('ui.vs.history')}</h4>${hist}</div>`;
   }
 
+  function dialogHtml(): string {
+    const close = `<button class="ghost" data-a="dialogClose">${t('ui.cancel')}</button>`;
+    if (dialog === 'new') return `<div class="panel dialog"><b>${t('ui.confirmNew')}</b>
+      <div class="btns"><button data-a="newYes">${t('ui.newYes')}</button>${close}</div></div>`;
+    if (dialog === 'export') return `<div class="panel dialog"><b>${t('ui.exportCode')}</b><small class="muted">${t('ui.exportHint')}</small>
+      <textarea readonly rows="4">${exportCode()}</textarea>
+      <div class="btns"><button data-a="copyCode">${t('ui.copy')}</button>${close}</div></div>`;
+    if (dialog === 'import') return `<div class="panel dialog"><b>${t('ui.importPrompt')}</b>
+      <textarea rows="4" data-k="code"></textarea>${dialogErr ? `<div class="toast">${t('ui.badCode')}</div>` : ''}
+      <div class="btns"><button data-a="importGo">${t('ui.importCode')}</button>${close}</div></div>`;
+    return '';
+  }
+
   function manageTab(st: GameState): string {
     const me = st.companies[0];
     const villages = VILLAGES.map((V) => {
@@ -287,6 +303,7 @@ export function mountBalance(
         <button class="ghost" data-a="export">${t('ui.exportCode')}</button>
         <button class="ghost" data-a="import">${t('ui.importCode')}</button>
         <button class="ghost" data-a="new">${t('ui.newGame')}</button></div>
+      ${dialogHtml()}
       <h3>${t('ui.events')}</h3><div class="panel">${events}</div>`;
   }
 
@@ -377,20 +394,38 @@ export function mountBalance(
       case 'card': return act(resolveCard(st, id, v));
       case 'usn': return act(setUsn(st, st.usn === 6 ? 15 : 6));
       case 'loan': return act(takeLoan(st, Number(v)));
-      case 'export': {
-        const code = exportCode();
-        navigator.clipboard?.writeText(code).catch(() => {});
-        prompt(t('ui.exportCode'), code);
+      case 'export':
+      case 'import':
+      case 'new':
+        dialog = b.dataset.a as typeof dialog;
+        dialogErr = false;
+        return render();
+      case 'dialogClose':
+        dialog = '';
+        return render();
+      case 'copyCode': {
+        const ta = el.querySelector<HTMLTextAreaElement>('.dialog textarea');
+        ta?.select();
+        navigator.clipboard?.writeText(exportCode()).catch(() => document.execCommand?.('copy'));
         return;
       }
-      case 'import': {
-        const code = prompt(t('ui.importPrompt'));
-        if (code && !onImport(code)) alert(t('ui.badCode'));
-        return render();
+      case 'importGo': {
+        const code = el.querySelector<HTMLTextAreaElement>('[data-k="code"]')?.value.trim() ?? '';
+        if (!code || !onImport(code)) {
+          dialogErr = true;
+          return render();
+        }
+        dialog = '';
+        tab = 'points';
+        render();
+        return window.scrollTo(0, 0);
       }
-      case 'new':
-        if (confirm(t('ui.confirmNew'))) onNewGame();
-        return render();
+      case 'newYes':
+        dialog = '';
+        tab = 'points';
+        onNewGame();
+        render();
+        return window.scrollTo(0, 0);
     }
   });
 

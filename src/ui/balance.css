@@ -92,3 +92,5 @@
 .balance .vsrow small { grid-column: 1 / -1; margin-top: -4px; }
 .balance .vshim { margin-top: 8px; font-size: 14px; }
 .balance h4 { margin: 12px 0 4px; font-size: 14px; }
+.balance .dialog { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; border: 2px solid #2f6f62; }
+.balance .dialog textarea { width: 100%; box-sizing: border-box; font: 12px monospace; border-radius: 8px; border: 1px solid #d8d1bf; padding: 8px; }

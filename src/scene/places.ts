@@ -254,7 +254,7 @@ function ruin(ctx: Ctx, h: Frame) {
 
 // ---------- достопримечательности ----------
 
-function waterTower(ctx: Ctx, x: number, z: number) {
+export function waterTower(ctx: Ctx, x: number, z: number) {
   const s = ctx.s;
   if (!ctx.plan.take(x - 2, z - 2, x + 3, z + 3)) return;
   for (const [dx, dz] of [[0, 0], [2, 0], [0, 2], [2, 2]]) s.fill(x + dx - 0.25, 0, z + dz - 0.25, x + dx, 6, z + dz, 0x8a4a3a);

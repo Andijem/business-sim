@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "certs": "node scripts/certs.mjs",
-    "html": "vite build --mode single && node scripts/rename-single.mjs"
+    "html": "vite build --mode single && node scripts/rename-single.mjs",
+    "editor": "vite build --mode editor"
   },
   "dependencies": {
     "three": "^0.170.0"

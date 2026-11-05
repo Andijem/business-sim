@@ -41,6 +41,14 @@ if (!hasMkcert) pwaPlugins.push(basicSsl());
 
 export default defineConfig(({ mode }) => {
   // `npm run html`: вся игра в одном game.html, открывается двойным кликом (без PWA и офлайна).
+  // `npm run editor`: редактор предметов в одном editor.html (модели те же, что в игре).
+  if (mode === 'editor') {
+    return {
+      base: './',
+      plugins: [viteSingleFile()],
+      build: { outDir: 'dist-editor', target: 'es2020', chunkSizeWarningLimit: 2000, rollupOptions: { input: 'editor.html' } },
+    };
+  }
   if (mode === 'single') {
     return {
       base: './',

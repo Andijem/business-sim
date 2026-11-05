@@ -12,12 +12,14 @@ const P = {
   leaves: [0x6f9a5a, 0x7fab63, 0x5f8a4e, 0x89b46a], pine: [0x4f7d4f, 0x5a8a56, 0x467046],
   wheat: [0xe8c870, 0xdcb85c], soil: [0x8a6a4a, 0x7d5f42],
 };
+/** Цвета улицы: асфальт, плитка, разметка (нужны редактору предметов). */
+export const STREET = P;
 
 /** Половина длины деревни вдоль дороги; у района города — шире. */
 const HALF = 32;
 const halfOf = (city?: boolean) => (city ? DISTRICT_GAP / 2 : HALF);
 
-function road(s: VoxelStore, a: number, b: number) {
+export function road(s: VoxelStore, a: number, b: number) {
   s.fill(a, -0.25, 1, b, 0, 5, (i, j, k) => pick(P.road, i, j, k));
   for (let x = a + 1; x < b; x += 2) s.fill(x, -0.25, 2.85, Math.min(b, x + 1), 0, 3.15, P.paint);
 }

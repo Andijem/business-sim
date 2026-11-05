@@ -1,5 +1,5 @@
 import type { ColorArg } from './voxels';
-import { VoxelStore, hash, pick, vi, VS } from './voxels';
+import { VoxelStore, hash, pick, vi, VS, FS } from './voxels';
 
 /**
  * Детали мира: жилые дома, дворы, улица, природа.
@@ -474,80 +474,122 @@ export function flowerbed(s: VoxelStore, x: number, z: number, w: number, d: num
   s.fill(x + 0.25, 0.25, z + 0.25, x + w - 0.25, 0.5, z + d - 0.25, (i, j, k) => (hash(i, j, k) > 0.5 ? pick(C.flowers, i, j, k) : pick(C.leaves, i, j, k)));
 }
 
-/** Стоящая машина вдоль x или z. */
+/** Стоящая машина вдоль x или z: гладкая модель с круглыми колёсами, как у едущих (угол x, z, место 2.25×1 м). */
 export function parkedCar(s: VoxelStore, x: number, z: number, c: number, alongZ = false) {
-  const L = 9, W = 4, i0 = vi(x), k0 = vi(z);
-  const put = (a: number, b: number, j: number, col: number) => (alongZ ? s.put(i0 + b, j, k0 + a, col) : s.put(i0 + a, j, k0 + b, col));
-  for (let a = 0; a < L; a++) for (let b = 0; b < W; b++) { put(a, b, 1, c); put(a, b, 2, c); }
-  for (let a = 2; a < L - 2; a++) for (let b = 0; b < W; b++) {
-    const edge = a === 2 || a === L - 3 || b === 0 || b === W - 1;
-    put(a, b, 3, edge ? 0x2b3340 : c); put(a, b, 4, c);
-  }
-  [[1, 0], [L - 2, 0], [1, W - 1], [L - 2, W - 1]].forEach(([a, b]) => put(a, b, 0, 0x222222));
+  s.car(x, z, c, alongZ);
 }
 
 // ---------- природа ----------
 
 export type Tree = 'oak' | 'birch' | 'pine' | 'apple' | 'poplar' | 'willow' | 'palm' | 'maple' | 'young';
 
-/** Дерево нужной породы; h — примерная высота в метрах. */
+/** Дерево нужной породы; h — примерная высота в метрах. Крона лиственных качается от ветра. */
 export function tree(s: VoxelStore, kind: Tree, x: number, z: number, h: number, autumn = false) {
   const cx = vi(x), cz = vi(z);
-  const leaves = autumn ? [0xd9a441, 0xc8743a, 0xe8c050] : kind === 'birch' ? C.birch : kind === 'poplar' ? C.poplar : C.leaves;
+  const apple = kind === 'apple';
+  const leaves = autumn ? [0xd9a441, 0xc8743a, 0xe8c050] : kind === 'birch' ? C.birch : kind === 'poplar' ? C.poplar
+    : apple ? [0x5a8a4a, 0x4f7d42, 0x63934f, 0x557f46] : C.leaves;
   if (kind === 'pine') return pine(s, cx, cz, h);
   if (kind === 'palm') return palm(s, cx, cz, h);
   const trunk = kind === 'birch' ? (j: number) => (j % 3 === 1 ? 0x2a2a2a : 0xeeeae0) : () => C.wood;
   const th = Math.round((h * (kind === 'poplar' ? 0.25 : kind === 'willow' ? 0.35 : 0.45)) / VS);
   for (let j = 0; j < th; j++) { s.put(cx, j, cz, trunk(j)); if (kind === 'oak' || kind === 'willow') { s.put(cx + 1, j, cz, C.wood2); s.put(cx, j, cz + 1, C.wood2); s.put(cx + 1, j, cz + 1, C.wood); } }
-  const R = (h * (kind === 'poplar' ? 0.2 : kind === 'apple' ? 0.45 : kind === 'young' ? 0.3 : 0.4)) / VS;
+  const R = (h * (kind === 'poplar' ? 0.2 : apple ? 0.45 : kind === 'young' ? 0.3 : 0.4)) / VS;
   const Ry = kind === 'poplar' ? R * 3.5 : kind === 'willow' ? R * 0.9 : R * 1.05;
   const cy = th + Ry * 0.7;
   const ri = Math.ceil(R) + 1, ry = Math.ceil(Ry) + 1;
+  s.swaying = true;
+  const fruit: [number, number, number][] = [];
   for (let i = -ri; i <= ri; i++) for (let j = -ry; j <= ry; j++) for (let k = -ri; k <= ri; k++) {
     if (kind === 'willow' && j < -Ry * 0.2 && Math.hypot(i, k) < R * 0.75) continue;
     const dd = Math.hypot(i / R, j / Ry, k / R) + hash(cx + i, j, cz + k) * 0.25;
     if (dd < 1.05) {
-      const fruit = kind === 'apple' && dd > 0.9 && hash(cx + i, j + 5, cz + k) > 0.85;
-      s.put(cx + i, Math.round(cy + j), cz + k, fruit ? 0xd84a3a : pick(leaves, cx + i, j, cz + k));
+      s.put(cx + i, Math.round(cy + j), cz + k, pick(leaves, cx + i, j, cz + k));
+      // яблоки висят снаружи кроны: на воксель дальше от центра, яркие, видно издалека
+      if (apple && dd > 0.85 && j > -Ry * 0.8 && hash(cx + i, j + 5, cz + k) > 0.8) fruit.push([i, j, k]);
     }
+  }
+  for (const [i, j, k] of fruit) {
+    const n = Math.hypot(i, j, k) || 1;
+    const fi = cx + i + Math.round(i / n), fj = Math.round(cy + j + j / n), fk = cz + k + Math.round(k / n);
+    s.put(fi, fj, fk, hash(fi, fj, fk) > 0.7 ? 0xc41a16 : 0xe8261e);
   }
   if (kind === 'willow')
     for (let i = -ri; i <= ri; i += 2) for (let k = -ri; k <= ri; k += 2)
       if (Math.abs(Math.hypot(i, k) - R * 0.9) < 1) for (let j = Math.round(cy - Ry * 0.9); j < cy; j++) s.put(cx + i, j, cz + k, leaves[1]);
+  s.swaying = false;
 }
 
 /**
  * Дерево на краю локации: несколько гладких блоков вместо сотен вокселей.
- * Издалека выглядит как обычное, а телефону почти ничего не стоит.
+ * Блоков хватает на ярусы, светлые и тёмные шапки кроны — а телефону почти ничего не стоит.
  */
 export function lowTree(s: VoxelStore, kind: Tree, x: number, z: number, h: number) {
   const n = hash(vi(x), 5, vi(z));
+  const rnd = (q: number) => hash(vi(x) + q, 11, vi(z) - q);
   if (kind === 'pine') {
-    s.block(x - 0.15, 0, z - 0.15, x + 0.15, h * 0.3, z + 0.15, C.wood);
-    for (let l = 0; l < 3; l++) {
-      const r = (h * 0.3) * (1 - l * 0.28), y = h * (0.2 + l * 0.25);
-      s.block(x - r, y, z - r, x + r, y + h * 0.3, z + r, C.pine[(l + Math.floor(n * 3)) % 3]);
+    const H = h * 1.3;
+    s.block(x - 0.15, 0, z - 0.15, x + 0.15, H * 0.35, z + 0.15, C.wood);
+    const tiers = 5;
+    for (let l = 0; l < tiers; l++) {
+      const r = (H * 0.27) * (1 - l * 0.17), y = H * (0.16 + l * 0.15);
+      const c = C.pine[(l + Math.floor(n * 3)) % 3];
+      s.block(x - r, y, z - r, x + r, y + 0.2, z + r, shade(c, 0.78)); // тёмный низ яруса
+      s.block(x - r * 0.75, y + 0.2, z - r * 0.75, x + r * 0.75, y + H * 0.12, z + r * 0.75, c);
+      s.block(x - r * 0.45, y + H * 0.12, z - r * 0.45, x + r * 0.45, y + H * 0.17, z + r * 0.45, shade(c, 1.1));
     }
+    s.block(x - 0.12, H * 0.9, z - 0.12, x + 0.12, H * 1.02, z + 0.12, C.pine[1]);
     return;
   }
   if (kind === 'palm') return palm(s, vi(x), vi(z), h);
   const leaves = kind === 'birch' ? C.birch : kind === 'poplar' ? C.poplar : C.leaves;
   const tall = kind === 'poplar' ? 2.2 : 1;
-  s.block(x - 0.15, 0, z - 0.15, x + 0.15, h * 0.45, z + 0.15, kind === 'birch' ? 0xeeeae0 : C.wood);
+  const birch = kind === 'birch';
+  s.block(x - 0.15, 0, z - 0.15, x + 0.15, h * 0.45, z + 0.15, birch ? 0xeeeae0 : C.wood);
+  if (birch) for (const y of [0.3, 0.75, 1.1]) s.block(x - 0.16, y, z - 0.16, x + 0.16, y + 0.08, z + 0.16, 0x2a2a2a);
+  else s.block(x - 0.22, 0, z - 0.22, x + 0.22, 0.25, z + 0.22, C.wood2); // корни
   const r = h * (kind === 'poplar' ? 0.2 : 0.38);
-  s.block(x - r, h * 0.4, z - r * 0.8, x + r, h * 0.4 + r * 1.5 * tall, z + r * 0.8, leaves[Math.floor(n * leaves.length)]);
-  s.block(x - r * 0.75, h * 0.4 - r * 0.2, z - r, x + r * 0.75, h * 0.4 + r * 1.3 * tall, z + r, leaves[(Math.floor(n * 7) + 1) % leaves.length]);
-  s.block(x - r * 0.5, h * 0.4 + r * 1.2 * tall, z - r * 0.5, x + r * 0.5, h * 0.4 + r * 1.8 * tall, z + r * 0.5, leaves[(Math.floor(n * 5) + 2) % leaves.length]);
+  const y0 = h * 0.4;
+  // крона из дюжины «облачков» разного размера по поверхности эллипсоида: снизу темнее, сверху светлее
+  const cy = y0 + r * 0.8 * tall;
+  s.block(x - r * 0.7, cy - r * 0.6 * tall, z - r * 0.7, x + r * 0.7, cy + r * 0.6 * tall, z + r * 0.7, shade(leaves[0], 0.85));
+  for (let q = 0; q < 12; q++) {
+    const a = q * 2.4 + rnd(q) * 0.8, el = (rnd(q + 20) * 2 - 1) * 0.9;
+    const d = r * (0.55 + rnd(q + 9) * 0.2), rr = r * (0.28 + rnd(q + 7) * 0.18);
+    const bx = x + Math.cos(a) * d * Math.sqrt(1 - el * el), bz = z + Math.sin(a) * d * Math.sqrt(1 - el * el), by = cy + el * r * 0.75 * tall;
+    const light = 0.82 + (el + 1) * 0.15 + rnd(q + 5) * 0.06;
+    s.block(bx - rr, by - rr * 0.85, bz - rr, bx + rr, by + rr * 0.85, bz + rr, shade(leaves[(q + Math.floor(n * 5)) % leaves.length], light));
+  }
 }
 
+/** Сосна: ствол и ярусы-«юбки» с тёмным низом и светлыми кончиками, чтобы слои читались. */
 function pine(s: VoxelStore, cx: number, cz: number, h: number) {
-  const H = Math.round(h / VS);
-  for (let j = 0; j < 4; j++) s.put(cx, j, cz, C.wood);
-  for (let j = 3; j < H; j++) {
-    const rr = (1 - (j - 3) / (H - 3)) * (h * 0.32) / VS + (j % 3 === 0 ? 0.8 : 0);
-    for (let i = -Math.ceil(rr); i <= rr; i++) for (let k = -Math.ceil(rr); k <= rr; k++)
-      if (Math.hypot(i, k) <= rr) s.put(cx + i, j, cz + k, pick(C.pine, i, j, k));
+  const H = Math.round((h * 1.4) / VS);
+  const trunkH = Math.round(H * 0.22);
+  for (let j = 0; j < H - 2; j++) s.put(cx, j, cz, j < trunkH ? C.wood : C.wood2);
+  const tiers = H > 26 ? 5 : 4;
+  const maxR = (h * 0.4) / VS;
+  const span = H - trunkH - 2;
+  const step = span / tiers;
+  for (let t = 0; t < tiers; t++) {
+    const base = trunkH + Math.round(t * step);
+    const tierH = Math.round(step) + 3;
+    const Rb = maxR * (1 - t / (tiers + 0.6));
+    const rad = (j: number) => (j >= tierH ? -1 : Math.max(0.6, Rb * Math.pow(1 - j / tierH, 1.4)));
+    for (let j = 0; j < tierH; j++) {
+      const rr = rad(j), up = rad(j + 1);
+      const ri = Math.ceil(rr);
+      for (let i = -ri; i <= ri; i++) for (let k = -ri; k <= ri; k++) {
+        const d = Math.hypot(i, k);
+        if (d > rr) continue;
+        const c0 = pick(C.pine, cx + i, base + j, cz + k);
+        // тёмная нижняя кромка яруса, светлый верх «ступеньки» — так слои читаются издалека
+        const col = j === 0 ? shade(c0, 0.66) : d > up ? shade(c0, 1.18) : c0;
+        s.put(cx + i, base + j, cz + k, col);
+      }
+    }
   }
+  for (let j = H - 3; j < H; j++) s.put(cx, j, cz, C.pine[2]);
 }
 
 function palm(s: VoxelStore, cx: number, cz: number, h: number) {
@@ -559,23 +601,80 @@ function palm(s: VoxelStore, cx: number, cz: number, h: number) {
   s.put(tx, H, cz, 0x6f9a5a);
 }
 
+const fi = (u: number) => Math.floor(u / FS + 1e-6);
+
+/** Куст из мелких вокселей: несколько неровных шапок листвы, тёмный низ, светлые верхушки, ягоды или цветочки. */
 export function bush(s: VoxelStore, x: number, z: number, r = 0.75, c = C.leaves) {
-  const R = r / VS, cx = vi(x), cz = vi(z);
-  for (let i = -R; i <= R; i++) for (let j = 0; j <= R; j++) for (let k = -R; k <= R; k++)
-    if (Math.hypot(i / R, j / R, k / R) + hash(cx + i, j, cz + k) * 0.3 < 1.05) s.put(cx + Math.round(i), j, cz + Math.round(k), pick(c, cx + i, j, cz + k));
-}
-export function flowers(s: VoxelStore, x: number, z: number, w: number, d: number) {
-  for (let i = vi(x); i < vi(x + w); i++) for (let k = vi(z); k < vi(z + d); k++) {
-    const n = hash(i, 9, k);
-    if (n > 0.8) s.put(i, 0, k, pick(C.flowers, i, 0, k));
-    else if (n > 0.6) s.put(i, 0, k, pick(C.grass, i, 1, k));
+  const R = r / FS, cx = fi(x), cz = fi(z);
+  const lumps: [number, number, number, number][] = [[0, R * 0.5, 0, R * 0.95]];
+  const nl = 4 + Math.floor(hash(cx, 1, cz) * 2);
+  for (let q = 0; q < nl; q++) {
+    const a = (q / nl) * Math.PI * 2 + hash(cx, q, cz), d = R * (0.5 + hash(cz, q, cx) * 0.2);
+    lumps.push([Math.cos(a) * d, R * (0.3 + hash(cx, q + 4, cz) * 0.35), Math.sin(a) * d, R * (0.45 + hash(cz, q + 2, cx) * 0.2)]);
+  }
+  const berry = hash(cx, 9, cz) > 0.5 ? 0xd8384a : 0xfaf2e6;
+  const top = Math.ceil(R * 1.45), W = Math.ceil(R * 1.4);
+  for (let i = -W; i <= W; i++) for (let j = 0; j <= top; j++) for (let k = -W; k <= W; k++) {
+    let best = 9;
+    for (const [lx, ly, lz, lr] of lumps) best = Math.min(best, Math.hypot((i - lx) / lr, (j - ly) / (lr * 0.9), (k - lz) / lr));
+    const nz = hash(cx + i, j, cz + k);
+    const d = best + nz * 0.12;
+    if (d >= 1) continue;
+    let col = pick(c, cx + i, j, cz + k);
+    if (j <= 2) col = shade(col, 0.72 + j * 0.06);
+    else if (d > 0.82 && j >= top * 0.6 && nz > 0.45) col = shade(col, 1.15);
+    if (d > 0.85 && j > 3 && nz > 0.965) col = berry;
+    s.putFine(cx + i, j, cz + k, col);
   }
 }
-export function rock(s: VoxelStore, x: number, z: number, r = 0.6) {
-  const R = r / VS, cx = vi(x), cz = vi(z);
-  for (let i = -R; i <= R; i++) for (let j = 0; j <= R * 0.7; j++) for (let k = -R; k <= R; k++)
-    if (Math.hypot(i / R, j / (R * 0.7), k / R) + hash(cx + i, j, cz + k) * 0.3 < 1) s.put(cx + Math.round(i), j, cz + Math.round(k), pick(C.stone, i, j, k));
+
+/** Цветы на траве: ростки со стеблем и листьями, сверху цветок из лепестков с серединкой; между ними пучки травы. */
+export function flowers(s: VoxelStore, x: number, z: number, w: number, d: number) {
+  const stem = 0x4f7d42, leaf = 0x6f9a4a;
+  for (let i = vi(x); i < vi(x + w); i++) for (let k = vi(z); k < vi(z + d); k++) {
+    const n = hash(i, 9, k);
+    // клетка 25 см: росток в случайной точке клетки
+    const ox = i * 2 + (hash(i, 13, k) > 0.5 ? 1 : 0), oz = k * 2 + (hash(i, 14, k) > 0.5 ? 1 : 0);
+    if (n > 0.74) {
+      const h = 2 + Math.floor(hash(i, 10, k) * 3);
+      for (let j = 0; j < h; j++) s.putFine(ox, j, oz, stem);
+      s.putFine(ox + (hash(i, 12, k) > 0.5 ? 1 : -1), 1, oz, leaf);
+      if (h > 3) s.putFine(ox, 2, oz + 1, leaf);
+      const petal = pick(C.flowers, i, 0, k);
+      const big = hash(i, 15, k) > 0.5;
+      s.putFine(ox, h, oz, big ? 0xf2c230 : petal);
+      if (big) for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) s.putFine(ox + a, h, oz + b, petal);
+      else s.putFine(ox, h + 1, oz, petal);
+    } else if (n > 0.35) {
+      const g = pick(C.grass, i, 1, k);
+      const t = 1 + Math.floor(hash(i, 16, k) * 3);
+      for (let j = 0; j < t; j++) s.putFine(ox, j, oz, shade(g, 0.9 + j * 0.08));
+      if (t > 1) s.putFine(ox + 1, 0, oz, g);
+    }
+  }
 }
+
+/** Камень из мелких вокселей: округлый валун и пара камешков рядом; верх светлее, низ темнее, кое-где мох. */
+export function rock(s: VoxelStore, x: number, z: number, r = 0.6) {
+  const R = r / FS, cx = fi(x), cz = fi(z);
+  const parts: [number, number, number][] = [[0, 0, R]];
+  const a = hash(cx, 3, cz) * Math.PI * 2;
+  parts.push([Math.cos(a) * R * 1.05, Math.sin(a) * R * 1.05, R * 0.45]);
+  if (R > 5) parts.push([Math.cos(a + 2.4) * R * 1.1, Math.sin(a + 2.4) * R * 1.1, R * 0.3]);
+  for (const [px, pz, pr] of parts) {
+    const ry = pr * 0.7, ri = Math.ceil(pr) + 1;
+    for (let i = -ri; i <= ri; i++) for (let j = 0; j <= Math.ceil(ry); j++) for (let k = -ri; k <= ri; k++) {
+      const gi = cx + Math.round(px) + i, gk = cz + Math.round(pz) + k;
+      const dd = Math.hypot(i / pr, (j + 0.5) / (ry + 0.5), k / pr) + hash(gi, j, gk) * 0.05;
+      if (dd >= 1) continue;
+      const up = j / Math.max(1, ry);
+      let col = up > 0.65 ? C.stone[2] : up > 0.25 ? pick(C.stone, gi, j, gk) : shade(C.stone[1], 0.86);
+      if (up > 0.5 && dd > 0.78 && hash(gi >> 1, j + 7, gk >> 1) > 0.8) col = 0x6f8a4a; // мох пятнами
+      s.putFine(gi, j, gk, col);
+    }
+  }
+}
+
 export function haystack(s: VoxelStore, x: number, z: number) {
   const cx = vi(x), cz = vi(z);
   for (let j = 0; j < 8; j++) {

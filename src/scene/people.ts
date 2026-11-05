@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PERSON_BODY, PERSON_HEAD } from './figures';
+import { Crowd, PANTS, RIGS, STEP_RATE } from './figures';
 import type { LotView } from './lots';
 import { slotOf, villageX } from './layout';
 
@@ -16,6 +16,8 @@ interface Agent {
   wait: number;
   color: number;
   hair: number;
+  pants: number;
+  phase: number;
 }
 
 /** Где у участка вход и по какой линии тротуара к нему идти. */
@@ -39,21 +41,14 @@ function routeTo(v: LotView, fromLeft: boolean): THREE.Vector3[] {
 /** Прохожие и гости: идут по тротуару к точке, заходят и уходят. Сколько их — по вчерашним гостям точки. */
 export class People {
   readonly group = new THREE.Group();
-  private body: THREE.InstancedMesh;
-  private head: THREE.InstancedMesh;
+  private crowd = new Crowd(RIGS.person, MAX);
   private agents: Agent[] = [];
   private acc = new Map<string, number>();
   private m = new THREE.Matrix4();
-  private c = new THREE.Color();
   private seed = 1;
 
   constructor() {
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
-    this.body = new THREE.InstancedMesh(PERSON_BODY(), mat, MAX);
-    this.head = new THREE.InstancedMesh(PERSON_HEAD(), mat, MAX);
-    this.body.count = this.head.count = 0;
-    this.body.frustumCulled = this.head.frustumCulled = false;
-    this.group.add(this.body, this.head);
+    this.group.add(this.crowd.group);
   }
 
   private rnd() {
@@ -80,7 +75,7 @@ export class People {
           const there = routeTo(v, this.rnd() < 0.5);
           const back = [...there].reverse();
           back[back.length - 1] = back[back.length - 1].clone().setX(back[back.length - 1].x * -1 + 2 * villageX(v.lot.village));
-          this.agents.push({ path: [...there, ...back.slice(1)], seg: 0, t: 0, wait: 0, color: COLORS[Math.floor(this.rnd() * COLORS.length)], hair: HAIR[Math.floor(this.rnd() * HAIR.length)] });
+          this.agents.push({ path: [...there, ...back.slice(1)], seg: 0, t: 0, wait: 0, color: COLORS[Math.floor(this.rnd() * COLORS.length)], hair: HAIR[Math.floor(this.rnd() * HAIR.length)], pants: PANTS[Math.floor(this.rnd() * PANTS.length)], phase: this.rnd() * 6 });
         }
       }
     }
@@ -89,6 +84,7 @@ export class People {
     for (const a of this.agents) {
       if (a.wait > 0) a.wait -= dt;
       else {
+        a.phase += dt * SPEED * STEP_RATE.person / SIZE.x;
         let step = SPEED * dt;
         while (step > 0 && a.seg < a.path.length - 1) {
           const A = a.path[a.seg], B = a.path[a.seg + 1];
@@ -118,18 +114,12 @@ export class People {
       if (a.wait > 0) continue; // внутри
       const A = a.path[a.seg], B = a.path[a.seg + 1];
       pos.copy(A).lerp(B, a.t);
-      const bob = Math.abs(Math.sin((a.seg + a.t) * 9)) * 0.05;
+      const bob = Math.abs(Math.sin(a.phase)) * 0.025;
       this.m.makeRotationY(Math.atan2(-(B.z - A.z), B.x - A.x)).scale(SIZE).setPosition(pos.x, 0.25 + bob, pos.z);
-      this.body.setMatrixAt(n, this.m);
-      this.body.setColorAt(n, this.c.setHex(a.color));
-      this.head.setMatrixAt(n, this.m);
-      this.head.setColorAt(n, this.c.setHex(a.hair));
+      this.crowd.set(n, this.m, a.phase, 1, a.phase, { main: a.color, hair: a.hair, pants: a.pants });
       n++;
     }
-    this.body.count = this.head.count = n;
-    this.body.instanceMatrix.needsUpdate = this.head.instanceMatrix.needsUpdate = true;
-    if (this.body.instanceColor) this.body.instanceColor.needsUpdate = true;
-    if (this.head.instanceColor) this.head.instanceColor.needsUpdate = true;
+    this.crowd.flush(n);
     return n > 0 || this.agents.length > 0;
   }
 }

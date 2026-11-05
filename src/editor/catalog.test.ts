@@ -24,7 +24,7 @@ describe('редактор предметов', () => {
       for (const p of variants) {
         const st = newStage();
         it.build(st, p);
-        const n = st.ctx.s.solid.size + st.ctx.s.glow.size + st.ctx.s.blocks.length + st.extra.length + st.figures.length;
+        const n = st.ctx.s.solid.size + st.ctx.s.glow.size + st.ctx.s.leaves.size + st.ctx.s.fine.size + st.ctx.s.cars.length + st.ctx.s.blocks.length + st.extra.length + st.figures.length;
         expect(n, it.id).toBeGreaterThan(0);
       }
     }

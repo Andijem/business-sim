@@ -11,6 +11,7 @@ import { STREET, road } from '../scene/village';
 import { buildLot, slotsOf } from '../scene/buildings';
 import { PLOT } from '../scene/layout';
 import { CARS, HAIR, PET, SHIRTS } from '../scene/life';
+import { PANTS } from '../scene/figures';
 
 /**
  * Список предметов для редактора: каждый собирается той же функцией, что и в игре,
@@ -34,7 +35,7 @@ export interface ParamDef {
 export type Params = Record<string, number>;
 
 export type FigureKind = 'person' | 'car' | 'hen' | 'dog' | 'cat' | 'duck' | 'cow' | 'goat' | 'gull' | 'pigeon' | 'crow' | 'squirrel';
-export interface Figure { kind: FigureKind; x: number; y: number; z: number; tint: number; hair?: number; scale: number; rot: number }
+export interface Figure { kind: FigureKind; x: number; y: number; z: number; tint: number; hair?: number; pants?: number; scale: number; rot: number }
 
 /** Что собрал предмет: воксели, готовые меши (здания бизнесов), фигурки и дым. */
 export interface Stage {
@@ -137,8 +138,8 @@ export const ITEMS: Item[] = [
   // ---------- люди ----------
   {
     id: 'walker', section: 'people', places: [K],
-    params: [P.pick('shirt', SHIRTS), P.pick('hair', HAIR), P.toggle('kid')],
-    build: (st, p) => st.figures.push({ kind: 'person', x: 0, y: 0, z: 0, tint: SHIRTS[p.shirt], hair: HAIR[p.hair], scale: p.kid ? 0.95 : 1.35, rot: Math.PI / 2 }),
+    params: [P.pick('shirt', SHIRTS), P.pick('pants', PANTS), P.pick('hair', HAIR), P.toggle('kid')],
+    build: (st, p) => st.figures.push({ kind: 'person', x: 0, y: 0, z: 0, tint: SHIRTS[p.shirt], hair: HAIR[p.hair], pants: PANTS[p.pants], scale: p.kid ? 0.95 : 1.35, rot: -Math.PI / 4 }),
   },
   // ---------- транспорт ----------
   {
@@ -150,16 +151,16 @@ export const ITEMS: Item[] = [
     build: (st, p) => parkedCar(st.ctx.s, -1.125, -0.5, C.cars[p.color]),
   },
   // ---------- животные ----------
-  { id: 'hen', section: 'animals', places: [K], build: (st) => st.figures.push({ kind: 'hen', x: 0, y: 0, z: 0, tint: 0xffffff, scale: 1, rot: 0 }) },
+  { id: 'hen', section: 'animals', places: [K], build: (st) => st.figures.push({ kind: 'hen', x: 0, y: 0, z: 0, tint: 0xffffff, scale: 1, rot: -0.6 }) },
   {
     id: 'dog', section: 'animals', places: [K], params: [P.pick('coat', PET.dog)],
-    build: (st, p) => st.figures.push({ kind: 'dog', x: 0, y: 0, z: 0, tint: PET.dog[p.coat], scale: 1, rot: 0 }),
+    build: (st, p) => st.figures.push({ kind: 'dog', x: 0, y: 0, z: 0, tint: PET.dog[p.coat], scale: 1, rot: -0.6 }),
   },
   {
     id: 'cat', section: 'animals', places: [K], params: [P.pick('coat', PET.cat)],
-    build: (st, p) => st.figures.push({ kind: 'cat', x: 0, y: 0, z: 0, tint: PET.cat[p.coat], scale: 1, rot: 0 }),
+    build: (st, p) => st.figures.push({ kind: 'cat', x: 0, y: 0, z: 0, tint: PET.cat[p.coat], scale: 1, rot: -0.6 }),
   },
-  { id: 'duck', section: 'animals', places: [K], build: (st) => st.figures.push({ kind: 'duck', x: 0, y: 0, z: 0, tint: 0xffffff, scale: 1, rot: 0 }) },
+  { id: 'duck', section: 'animals', places: [K], build: (st) => st.figures.push({ kind: 'duck', x: 0, y: 0, z: 0, tint: 0xffffff, scale: 1, rot: -0.6 }) },
   // ---------- деревья и растения ----------
   treeItem('oak', 'oak', 3),
   treeItem('birch', 'birch', 3),

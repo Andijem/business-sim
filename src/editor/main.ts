@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { setupWorld } from '../scene/world';
-import { ANIMALS, CAR, PERSON_BODY, PERSON_HEAD } from '../scene/figures';
+import { CAR, CAR_LIGHTS, PANTS, RIGS, STEP_RATE, pose, type RigPart } from '../scene/figures';
+import { MATS, WIND } from '../scene/voxels';
 import { tk } from '../i18n';
 import { ITEMS, PLACES, SECTIONS, defaults, newStage, type Figure, type Item, type Params } from './catalog';
 import { hex, recolorGeometry, tint, unhex, withColors, type Swatch } from './recolor';
@@ -42,6 +43,7 @@ document.body.innerHTML = `
     <button class="nav next" id="next" aria-label="${tk('ed.next')}">›</button>
     <div class="tools">
       <label class="tool"><input type="checkbox" id="spin" checked> ${tk('ed.spin')}</label>
+      <label class="tool"><input type="checkbox" id="move" checked> ${tk('ed.move')}</label>
       <label class="tool" id="cutTool"><input type="checkbox" id="cut"> ${tk('ed.cutaway')}</label>
       <label class="tool"><input type="checkbox" id="orig"> ${tk('ed.original')}</label>
       <label class="tool time">🕑 <input type="range" id="hour" min="5" max="23.5" step="0.5" value="13"> <span id="hourV"></span></label>
@@ -98,21 +100,45 @@ function resize() {
 }
 new ResizeObserver(resize).observe(view);
 
-const figureGeo = (f: Figure): THREE.BufferGeometry[] =>
-  f.kind === 'person' ? [PERSON_BODY(), PERSON_HEAD()] : f.kind === 'car' ? [CAR()] : [ANIMALS[f.kind]()];
+/** Фигурки двигаются на месте: ноги, руки, хвосты — та же поза, что в игре. */
+interface Puppet { parts: RigPart[]; meshes: THREE.Mesh[]; kind: string; phase: number; local: THREE.Matrix4[] }
+let puppets: Puppet[] = [];
+const WARM = new THREE.Color(0xfff2c8);
+const lightsMat = new THREE.MeshBasicMaterial({ color: 0xfff2c8 });
+const CAR_RIG: RigPart[] = [
+  { geo: CAR, tint: 'main', parent: -1, pivot: [0, 0, 0], joint: 'none' },
+  { geo: CAR_LIGHTS, tint: null, parent: -1, pivot: [0, 0, 0], joint: 'none' },
+];
 
 function figureMesh(f: Figure): THREE.Group {
   const g = new THREE.Group();
-  figureGeo(f).forEach((geo, n) => {
-    const c = n === 1 ? f.hair ?? 0xffffff : f.tint;
-    const m = new THREE.Mesh(recolorGeometry(geo), new THREE.MeshLambertMaterial({ vertexColors: true, color: tint(c) }));
-    m.castShadow = m.receiveShadow = true;
+  const parts = f.kind === 'car' ? CAR_RIG : RIGS[f.kind];
+  const tints: Record<string, number> = { main: f.tint, hair: f.hair ?? 0xffffff, pants: f.pants ?? PANTS[0] };
+  const meshes = parts.map((p, n) => {
+    const lights = f.kind === 'car' && n === 1;
+    const mat = lights ? lightsMat : new THREE.MeshLambertMaterial({ vertexColors: true, color: tint(p.tint ? tints[p.tint] : 0xffffff) });
+    const m = new THREE.Mesh(recolorGeometry(p.geo()), mat);
+    m.castShadow = m.receiveShadow = !lights;
+    m.matrixAutoUpdate = false;
     g.add(m);
+    return m;
   });
+  puppets.push({ parts, meshes, kind: f.kind, phase: 0, local: [] });
   g.position.set(f.x, f.y, f.z);
   g.rotation.y = f.rot;
   g.scale.setScalar(f.scale);
   return g;
+}
+
+function animate(dt: number) {
+  const on = ($('#move') as HTMLInputElement).checked;
+  if (on) WIND.value += dt;
+  lightsMat.color.copy(MATS.glow.color).multiply(WARM);
+  for (const p of puppets) {
+    if (on) p.phase += dt * (STEP_RATE[p.kind] ?? 0) * (p.kind === 'person' ? 1.2 : 0.6);
+    pose(p.parts, p.phase, on && STEP_RATE[p.kind] ? 1 : 0, on ? WIND.value : 0, p.local);
+    p.meshes.forEach((m, i) => m.matrix.copy(p.local[i]));
+  }
 }
 
 function smokePuffs(list: [number, number, number][]): THREE.Object3D {
@@ -133,6 +159,7 @@ function show(it: Item, edit: ItemEdit, original: boolean): Swatch[] {
   if (current) { scene.remove(current); disposeTree(current); }
   const p: Params = { ...defaults(it), ...(original ? {} : edit.params) };
   const map = new Map<number, number>(original ? [] : Object.entries(edit.colors ?? {}).map(([a, b]) => [unhex(a), unhex(b)]));
+  puppets = [];
   const { out, swatches } = withColors(map, () => {
     const st = newStage(1);
     it.build(st, p);
@@ -446,7 +473,9 @@ $('#importBtn').onclick = () => {
 };
 
 // ---------- кадр ----------
+const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
+  animate(Math.min(0.1, clock.getDelta()));
   controls.update();
   renderer.render(scene, camera);
 });

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { ANIMALS, ANIMAL_SPEED, BUS, CAR, FLYING, PERSON_BODY, PERSON_HEAD } from './figures';
+import { ANIMAL_KINDS, ANIMAL_SPEED, BUS, CAR, CAR_LIGHTS, Crowd, FLYING, PANTS, RIGS, STEP_RATE } from './figures';
+import { MATS, WIND } from './voxels';
 import type { Anim } from './props';
 import type { Place } from './village';
 
@@ -16,10 +17,17 @@ export const PET: Record<string, number[]> = { dog: [0x8a5e3c, 0xd9b870, 0x3a3a3
 const RADIUS = 140; // м: дальше от камеры жизнь не считаем
 
 const lambert = () => new THREE.MeshLambertMaterial({ vertexColors: true });
+/** Световое пятно перед машиной: трапеция на асфальте. */
+function beamGeo() {
+  const g = new THREE.BufferGeometry();
+  const y = 0.02;
+  g.setAttribute('position', new THREE.Float32BufferAttribute([2.3, y, -0.45, 6, y, -1.3, 6, y, 1.3, 2.3, y, -0.45, 6, y, 1.3, 2.3, y, 0.45], 3));
+  return g;
+}
 
 interface Car { x: number; lane: 1 | -1; v: number; max: number; color: number; bus: boolean }
-interface Walker { x: number; z: number; path: [number, number][]; seg: number; wait: number; shirt: number; hair: number; speed: number; idle: boolean; scale: number }
-interface Critter { kind: string; x: number; z: number; tx: number; tz: number; wait: number; pen: { x0: number; z0: number; x1: number; z1: number }; color: number; h: number; ang: number }
+interface Walker { x: number; z: number; path: [number, number][]; seg: number; wait: number; shirt: number; hair: number; pants: number; speed: number; idle: boolean; scale: number; phase: number }
+interface Critter { kind: string; x: number; z: number; tx: number; tz: number; wait: number; pen: { x0: number; z0: number; x1: number; z1: number }; color: number; h: number; ang: number; phase: number }
 interface Puff { x: number; y: number; z: number; t: number }
 
 function mesh(geo: THREE.BufferGeometry, max: number, mat: THREE.Material = lambert()) {
@@ -41,10 +49,14 @@ export class Life {
   private t = 0;
   private carMesh = mesh(CAR(), 60);
   private busMesh = mesh(BUS(), 8);
-  private bodyMesh = mesh(PERSON_BODY(), 260);
-  private headMesh = mesh(PERSON_HEAD(), 260);
+  /** Фары: светятся материалом окон, вечером ярче. */
+  private lightMesh = mesh(CAR_LIGHTS(), 60, MATS.glow);
+  /** Пятна света от фар на асфальте: видны только в темноте. */
+  private beamMat = new THREE.MeshBasicMaterial({ color: 0xfff2c8, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+  private beamMesh = mesh(beamGeo(), 60, this.beamMat);
+  private crowd = new Crowd(RIGS.person, 260);
   private smokeMesh = mesh(new THREE.BoxGeometry(0.35, 0.35, 0.35), 240, new THREE.MeshLambertMaterial({ color: 0xe8e8ec, transparent: true, opacity: 0.7, depthWrite: false }));
-  private animalMesh: Record<string, THREE.InstancedMesh> = {};
+  private animalMesh: Record<string, Crowd> = {};
   private m = new THREE.Matrix4();
   private q = new THREE.Quaternion();
   private e = new THREE.Euler();
@@ -53,10 +65,10 @@ export class Life {
   private sc = new THREE.Vector3(1, 1, 1);
 
   constructor(private places: Place[], private road: [number, number]) {
-    this.group.add(this.carMesh, this.busMesh, this.bodyMesh, this.headMesh, this.smokeMesh);
-    for (const [k, geo] of Object.entries(ANIMALS)) {
-      this.animalMesh[k] = mesh(geo(), 48);
-      this.group.add(this.animalMesh[k]);
+    this.group.add(this.carMesh, this.busMesh, this.lightMesh, this.beamMesh, this.crowd.group, this.smokeMesh);
+    for (const k of ANIMAL_KINDS) {
+      this.animalMesh[k] = new Crowd(RIGS[k], 48);
+      this.group.add(this.animalMesh[k].group);
     }
   }
 
@@ -75,9 +87,10 @@ export class Life {
   update(dt: number, running: boolean, hour: number, camX: number): boolean {
     if (!running) return false;
     this.t += dt;
+    WIND.value += dt;
     const night = hour < 6.5 || hour >= 22;
     const near = this.places.filter((p) => p.built && Math.abs(p.x - camX) - p.half < RADIUS);
-    this.traffic(dt, night, camX, near);
+    this.traffic(dt, night, camX, near, hour);
     this.people(dt, night, near);
     this.animals(dt, near);
     this.smoke(dt, near);
@@ -93,7 +106,7 @@ export class Life {
   }
 
   // ---------- машины ----------
-  private traffic(dt: number, night: boolean, camX: number, near: Place[]) {
+  private traffic(dt: number, night: boolean, camX: number, near: Place[], hour: number) {
     const want = night ? 3 : near.some((p) => p.city) ? 14 : 8;
     const lo = Math.max(this.road[0], camX - RADIUS), hi = Math.min(this.road[1], camX + RADIUS);
     this.cars = this.cars.filter((c) => c.x > lo - 10 && c.x < hi + 10);
@@ -127,9 +140,20 @@ export class Life {
       const n = c.bus ? nb++ : nc++;
       target.setMatrixAt(n, this.m);
       target.setColorAt(n, this.c.setHex(c.color));
+      if (!c.bus) {
+        this.lightMesh.setMatrixAt(n, this.m);
+        this.lightMesh.setColorAt(n, this.c.setHex(0xfff2c8));
+        this.beamMesh.setMatrixAt(n, this.m);
+      }
     }
     this.flush(this.carMesh, nc);
     this.flush(this.busMesh, nb);
+    this.flush(this.lightMesh, nc);
+    this.flush(this.beamMesh, nc);
+    // фары «включаются» в сумерках: 19:30–7:00
+    const dark = hour >= 21 || hour < 5.5 ? 1 : hour >= 19.5 ? (hour - 19.5) / 1.5 : hour < 7 ? (7 - hour) / 1.5 : 0;
+    this.beamMat.opacity = 0.32 * dark;
+    this.beamMesh.visible = dark > 0;
   }
 
   // ---------- жители ----------
@@ -163,23 +187,20 @@ export class Life {
         let ang = 0;
         if (moving) { const [bx, bz] = w.path[w.seg + 1]; ang = Math.atan2(-(bz - w.z), bx - w.x); }
         else ang = (w.x * 7) % 6.28;
-        const bob = moving ? Math.abs(Math.sin(this.t * 9 + w.x)) * 0.04 : 0;
+        if (moving) w.phase += dt * w.speed * STEP_RATE.person / w.scale;
+        const bob = moving ? Math.abs(Math.sin(w.phase)) * 0.025 : 0;
         this.q.setFromEuler(this.e.set(0, ang, 0));
         this.m.compose(this.v.set(w.x, 0.25 + bob, w.z), this.q, this.sc.setScalar(w.scale));
-        this.bodyMesh.setMatrixAt(n, this.m);
-        this.bodyMesh.setColorAt(n, this.c.setHex(w.shirt));
-        this.headMesh.setMatrixAt(n, this.m);
-        this.headMesh.setColorAt(n, this.c.setHex(w.hair));
+        this.crowd.set(n, this.m, w.phase, moving ? 1 : 0, this.t + w.x, { main: w.shirt, hair: w.hair, pants: w.pants });
         n++;
       }
     }
-    this.flush(this.bodyMesh, n);
-    this.flush(this.headMesh, n);
+    this.crowd.flush(n);
   }
 
   private spawnWalker(p: Place): Walker {
     const kid = this.rnd() < 0.15;
-    const w: Walker = { x: 0, z: 0, path: [], seg: 0, wait: 0, shirt: this.pick(SHIRTS), hair: this.pick(HAIR), speed: 0.9 + this.rnd() * 0.6, idle: false, scale: kid ? 0.95 : 1.3 + this.rnd() * 0.15 };
+    const w: Walker = { x: 0, z: 0, path: [], seg: 0, wait: 0, shirt: this.pick(SHIRTS), hair: this.pick(HAIR), pants: this.pick(PANTS), speed: 0.9 + this.rnd() * 0.6, idle: false, scale: kid ? 0.95 : 1.3 + this.rnd() * 0.15, phase: this.rnd() * 6 };
     // часть жителей сидит на лавочках и стоит на остановках
     if (p.idle.length && this.rnd() < 0.35) {
       const [x, , z] = this.pick(p.idle);
@@ -225,7 +246,7 @@ export class Life {
         for (const pen of p.pens) for (let i = 0; i < pen.n; i++) {
           const x = pen.x0 + this.rnd() * (pen.x1 - pen.x0), z = pen.z0 + this.rnd() * (pen.z1 - pen.z0);
           const pet = PET[pen.kind];
-          list.push({ kind: pen.kind, x, z, tx: x, tz: z, wait: this.rnd() * 3, pen, color: pet ? this.pick(pet) : 0xffffff, h: FLYING.has(pen.kind) ? 6 + this.rnd() * 6 : 0, ang: 0 });
+          list.push({ kind: pen.kind, x, z, tx: x, tz: z, wait: this.rnd() * 3, pen, color: pet ? this.pick(pet) : 0xffffff, h: FLYING.has(pen.kind) ? 6 + this.rnd() * 6 : 0, ang: 0, phase: this.rnd() * 6 });
         }
         this.critters.set(p.id, list);
       }
@@ -251,6 +272,7 @@ export class Life {
           continue;
         }
         const step = Math.min(d, sp * dt);
+        a.phase += step * (STEP_RATE[a.kind] ?? 8);
         a.x += (dx / d) * step;
         a.z += (dz / d) * step;
         a.ang = Math.atan2(-dz, dx);
@@ -264,15 +286,14 @@ export class Life {
           ang = -(a.ang + a.x * 0.37) - Math.PI / 2;
           roll = Math.sin(this.t * 6 + a.x) * 0.3;
         } else if (a.kind === 'duck') y = 0;
-        else if (a.wait <= 0) y += Math.abs(Math.sin(this.t * 10 + a.x)) * 0.03;
+        else if (a.wait <= 0 && !STEP_RATE[a.kind]) y += Math.abs(Math.sin(this.t * 10 + a.x)) * 0.03;
         this.q.setFromEuler(this.e.set(roll, ang, 0));
         this.m.compose(this.v.set(x, y, z), this.q, this.sc.set(1, 1, 1));
-        m.setMatrixAt(counts[a.kind], this.m);
-        m.setColorAt(counts[a.kind], this.c.setHex(a.color));
+        m.set(counts[a.kind], this.m, a.phase, a.wait <= 0 ? 1 : 0, this.t + a.x, { main: a.color });
         counts[a.kind]++;
       }
     }
-    for (const k in this.animalMesh) this.flush(this.animalMesh[k], counts[k]);
+    for (const k in this.animalMesh) this.animalMesh[k].flush(counts[k]);
   }
 
   // ---------- дым ----------

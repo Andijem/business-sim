@@ -27,6 +27,18 @@ const to = (c: number) => remap.get(c) ?? c;
 
 const proto = VoxelStore.prototype;
 const put = proto.put, putGlow = proto.putGlow, block = proto.block;
+const putFine = proto.putFine;
+proto.putFine = function (this: VoxelStore, i: number, j: number, k: number, c: number) {
+  if (!active) return putFine.call(this, i, j, k, c);
+  note(c, 1, false);
+  return putFine.call(this, i, j, k, to(c));
+};
+const car = proto.car;
+proto.car = function (this: VoxelStore, x: number, z: number, c: number, alongZ = false) {
+  if (!active) return car.call(this, x, z, c, alongZ);
+  note(c, 1, false);
+  return car.call(this, x, z, to(c), alongZ);
+};
 proto.put = function (this: VoxelStore, i: number, j: number, k: number, c: number | null) {
   if (c == null || !active) return put.call(this, i, j, k, c);
   note(c, 1, false);
